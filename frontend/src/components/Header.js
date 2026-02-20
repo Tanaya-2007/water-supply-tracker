@@ -8,95 +8,60 @@ export default function Header() {
   }, []);
 
   return (
-    <header style={{
-      background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 55%, #06b6d4 100%)",
-      boxShadow: "0 4px 24px rgba(3,105,161,0.3)",
-      position: "relative",
-      overflow: "hidden",
-      width: "100%",
-    }}>
-      {/* Water photo overlay */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 0,
-        backgroundImage: "url('https://images.unsplash.com/photo-1559825481-12a05cc00344?w=1920&q=80')",
-        backgroundSize: "cover", backgroundPosition: "center 60%",
-        mixBlendMode: "overlay", opacity: 0.28,
-      }} />
-      {/* Shimmer */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 60% 50% at 25% 40%, rgba(255,255,255,0.16) 0%, transparent 65%)",
-      }} />
+    <header className="relative overflow-hidden z-20 shadow-lg"
+      style={{ background: "linear-gradient(135deg,#0369a1 0%,#0284c7 45%,#0ea5e9 75%,#06b6d4 100%)" }}>
 
-      {/* ── Main content row ── */}
-      <div style={{
-        position: "relative", zIndex: 10,
-        maxWidth: 1280, margin: "0 auto",
-        padding: "16px 20px",          /* ← good padding all sides */
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-      }}>
+      {/* Water photo overlay */}
+      <div className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1559825481-12a05cc00344?w=1920&q=80')",
+          backgroundSize: "cover", backgroundPosition: "center 60%",
+          mixBlendMode: "overlay", opacity: 0.22,
+        }} />
+
+      {/* Shimmer */}
+      <div className="absolute inset-0 z-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 55% 50% at 20% 40%,rgba(255,255,255,0.14) 0%,transparent 65%)" }} />
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 flex items-center justify-between gap-3">
+
         {/* Brand */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          <div className="anim-drop-bob" style={{
-            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-            background: "rgba(255,255,255,0.22)", backdropFilter: "blur(12px)",
-            border: "1.5px solid rgba(255,255,255,0.45)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)",
-          }}>💧</div>
-          <div style={{ minWidth: 0 }}>
-            <h1 style={{
-              fontFamily: "'Raleway', sans-serif", fontWeight: 900,
-              fontSize: "clamp(18px, 3.5vw, 26px)",
-              color: "#fff", lineHeight: 1,
-              letterSpacing: "-0.4px",
-              textShadow: "0 2px 12px rgba(0,0,0,0.2)",
-              margin: 0, whiteSpace: "nowrap",
-            }}>JalDarpan</h1>
-            <p style={{
-              fontSize: "clamp(8px, 1.5vw, 10px)", fontWeight: 700,
-              letterSpacing: "0.18em", textTransform: "uppercase",
-              color: "rgba(224,242,254,0.9)", marginTop: 4,
-              textShadow: "0 1px 6px rgba(0,0,0,0.12)",
-              whiteSpace: "nowrap",
-            }}>Sangli · Miraj · Kupwad</p>
+        <div className="flex items-center gap-3">
+          <div className="anim-drop-bob flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+            style={{
+              background: "rgba(255,255,255,0.22)", backdropFilter: "blur(12px)",
+              border: "1.5px solid rgba(255,255,255,0.45)",
+              boxShadow: "0 6px 20px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.4)",
+            }}>💧</div>
+          <div>
+            <h1 className="font-black text-white leading-none"
+              style={{ fontFamily: "'Raleway',sans-serif", fontSize: "clamp(18px,3.5vw,26px)", letterSpacing: "-0.4px", textShadow: "0 2px 10px rgba(0,0,0,0.18)" }}>
+              JalDarpan
+            </h1>
+            <p className="font-bold uppercase tracking-widest mt-0.5"
+              style={{ fontSize: "clamp(7px,1.2vw,10px)", color: "rgba(224,242,254,0.85)", letterSpacing: "0.16em" }}>
+              Sangli · Miraj · Kupwad
+            </p>
           </div>
         </div>
 
         {/* Right badges */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            background: "rgba(255,255,255,0.18)", backdropFilter: "blur(12px)",
-            border: "1.5px solid rgba(255,255,255,0.35)",
-            borderRadius: 999, padding: "6px 12px",
-          }}>
-            <span style={{
-              width: 8, height: 8, borderRadius: "50%", background: "#fca5a5",
-              display: "inline-block", flexShrink: 0,
-              animation: "pulse-ring 1.5s ease-in-out infinite",
-            }} />
-            <span style={{ color: "#fff", fontSize: 10, fontWeight: 900, letterSpacing: "1.5px" }}>LIVE</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+            style={{ background: "rgba(255,255,255,0.18)", backdropFilter: "blur(12px)", border: "1.5px solid rgba(255,255,255,0.35)" }}>
+            <span className="w-2 h-2 rounded-full bg-red-300 flex-shrink-0"
+              style={{ animation: "pulse-ring 1.5s ease-in-out infinite" }} />
+            <span className="text-white font-black tracking-widest" style={{ fontSize: 11 }}>LIVE</span>
           </div>
-          <div style={{
-            background: "rgba(255,255,255,0.18)", backdropFilter: "blur(12px)",
-            border: "1.5px solid rgba(255,255,255,0.35)",
-            borderRadius: 999, padding: "6px 14px",
-          }}>
-            <span style={{
-              fontFamily: "'Nunito', sans-serif", fontWeight: 800,
-              fontSize: "clamp(11px, 1.8vw, 13px)", color: "#fff",
-              letterSpacing: "0.05em",
-            }}>
+          <div className="px-3 py-1.5 rounded-full hidden sm:block"
+            style={{ background: "rgba(255,255,255,0.18)", backdropFilter: "blur(12px)", border: "1.5px solid rgba(255,255,255,0.35)" }}>
+            <span className="font-extrabold text-white" style={{ fontFamily: "'Nunito',sans-serif", fontSize: "clamp(11px,1.8vw,14px)", letterSpacing: "0.04em" }}>
               {time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
             </span>
           </div>
         </div>
       </div>
-      
     </header>
   );
 }
