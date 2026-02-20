@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAUw4uubz7wVFk8wNWUmGghcCDL7vHrlt4",
+  apiKey: "AIzaSyAUw4uubz7wVFkBwNWUmGqhcCDL7vHrlt4",
   authDomain: "water-supply-tracker-8cad0.firebaseapp.com",
   projectId: "water-supply-tracker-8cad0",
   storageBucket: "water-supply-tracker-8cad0.firebasestorage.app",
