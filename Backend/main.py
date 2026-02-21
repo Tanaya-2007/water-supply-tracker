@@ -14,8 +14,8 @@ app.add_middleware(
 )
 
 # Load your models (Make sure these files are uploaded to the same folder!)
-model = joblib.load("_model.joblib")
-encoder = joblib.load("_encoder.joblib")
+model = joblib.load("water_model.joblib")
+encoder = joblib.load("zone_encoder.joblib")
 
 @app.get("/")
 def home():
