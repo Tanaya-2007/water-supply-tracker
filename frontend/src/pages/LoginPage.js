@@ -2,8 +2,12 @@ import { useState } from "react";
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, provider } from "../firebase";
 
+const ADMIN_EMAIL    = "admin@jaldarpan.in";
+const ADMIN_PASSWORD = "admin@123";
+
 export default function LoginPage({ onLogin }) {
   const [tab,      setTab]      = useState("signin");
+  const [mode,     setMode]     = useState("user");   // "user" | "admin"
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [name,     setName]     = useState("");
@@ -15,12 +19,21 @@ export default function LoginPage({ onLogin }) {
     if (!email || !password) { setError("Please fill in all fields"); return; }
     setLoading(true); setError("");
     try {
+      // Admin check
+      if (mode === "admin") {
+        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+          onLogin("admin"); return;
+        } else {
+          setError("Invalid admin credentials."); setLoading(false); return;
+        }
+      }
+      // Citizen login/signup via Firebase
       if (tab === "signin") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      onLogin();
+      onLogin("user");
     } catch (err) {
       setError(err.message.replace("Firebase: ", "").replace(/\(auth.*\)/, ""));
     } finally {
@@ -32,7 +45,7 @@ export default function LoginPage({ onLogin }) {
     setError(""); setLoading(true);
     try {
       await signInWithPopup(auth, provider);
-      onLogin();
+      onLogin("user");
     } catch (err) {
       setError("Google sign-in failed. Please try again.");
     } finally {
@@ -108,8 +121,31 @@ export default function LoginPage({ onLogin }) {
           </p>
         </div>
 
-        {/* Tabs */}
+        {/* Role selector */}
         <div style={{
+          display:"grid", gridTemplateColumns:"1fr 1fr", gap:4,
+          background:"rgba(255,255,255,0.08)", borderRadius:14, padding:4, marginBottom:12,
+        }}>
+          {[{key:"user",label:"👤 Citizen"},{key:"admin",label:"🛡️ Admin"}].map(r=>(
+            <button key={r.key} onClick={()=>{setMode(r.key);setError("");}} style={{
+              padding:"10px", borderRadius:11, fontSize:13, fontWeight:800,
+              fontFamily:"'Nunito',sans-serif", cursor:"pointer", border:"none",
+              transition:"all 0.25s ease",
+              background:mode===r.key
+                ? r.key==="admin"
+                  ? "linear-gradient(135deg,#7c3aed,#6366f1)"
+                  : "linear-gradient(135deg,#0ea5e9,#06b6d4)"
+                : "transparent",
+              color:mode===r.key?"white":"rgba(255,255,255,0.5)",
+              boxShadow:mode===r.key
+                ? r.key==="admin"?"0 4px 12px rgba(124,58,237,0.4)":"0 4px 12px rgba(6,182,212,0.4)"
+                : "none",
+            }}>{r.label}</button>
+          ))}
+        </div>
+
+        {/* Tabs — citizen only */}
+        {mode === "user" && <div style={{
           display:"grid", gridTemplateColumns:"1fr 1fr", gap:4,
           background:"rgba(255,255,255,0.08)", borderRadius:14, padding:4, marginBottom:24,
         }}>
@@ -125,7 +161,7 @@ export default function LoginPage({ onLogin }) {
               {t==="signin"?"Sign In":"Sign Up"}
             </button>
           ))}
-        </div>
+        </div>}
 
         {/* Fields */}
         <div style={{display:"flex", flexDirection:"column", gap:14, marginBottom:20}}>
@@ -189,9 +225,10 @@ export default function LoginPage({ onLogin }) {
           opacity:loading?0.7:1,
           transition:"opacity 0.2s ease",
         }}>
-          {loading?"Please wait…":tab==="signin"?"Sign In →":"Create Account →"}
+          {loading?"Please wait…":mode==="admin"?"🛡️ Admin Login":tab==="signin"?"Sign In →":"Create Account →"}
         </button>
 
+        {mode === "user" && <>
         {/* Divider */}
         <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:14}}>
           <div style={{flex:1, height:1, background:"rgba(255,255,255,0.15)"}}/>
@@ -222,6 +259,7 @@ export default function LoginPage({ onLogin }) {
                    color:"rgba(255,255,255,0.35)", marginTop:20}}>
           Sangli Municipal Corporation · Citizen Portal
         </p>
+        </>}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ const cityNames = {
   nashik: "Nashik",
 };
 
-export default function Header({ onAdminClick, selectedCity }) {
+export default function Header({ onAdminClick, selectedCity, role, onLogout }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -20,7 +20,7 @@ export default function Header({ onAdminClick, selectedCity }) {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 20px;
+          padding: 10px 16px;
           max-width: 1280px;
           margin: 0 auto;
           gap: 8px;
@@ -56,6 +56,18 @@ export default function Header({ onAdminClick, selectedCity }) {
                         box-shadow:0 4px 16px rgba(0,0,0,0.18);
                         white-space:nowrap; transition:all 0.2s ease; }
         .header-admin:hover { background:#e0f2fe; transform:scale(1.04); }
+        .header-logout { display:flex; align-items:center; gap:5px;
+                         padding:7px 14px; border-radius:999px;
+                         background:rgba(255,255,255,0.95); border:none;
+                         color:#dc2626; font-weight:900; font-size:13px;
+                         cursor:pointer; font-family:'Nunito',sans-serif;
+                         box-shadow:0 4px 16px rgba(0,0,0,0.18);
+                         white-space:nowrap; transition:all 0.2s ease; }
+        .header-logout:hover { background:#fee2e2; transform:scale(1.04); }
+        @media (max-width: 380px) {
+          .header-logout span { display:none; }
+          .header-logout { padding:7px 10px; }
+        }
         /* Hide clock on very small screens */
         @media (max-width: 380px) {
           .header-clock { display:none; }
@@ -116,9 +128,16 @@ export default function Header({ onAdminClick, selectedCity }) {
               {time.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}
             </div>
 
-            {/* Admin */}
-            <button className="header-admin" onClick={onAdminClick}>
-              🛡️<span> Admin</span>
+            {/* Admin — only for admin role */}
+            {role === "admin" && (
+              <button className="header-admin" onClick={onAdminClick}>
+                🛡️<span> Admin</span>
+              </button>
+            )}
+
+            {/* Logout */}
+            <button className="header-logout" onClick={onLogout}>
+              🚪<span> Logout</span>
             </button>
           </div>
         </div>

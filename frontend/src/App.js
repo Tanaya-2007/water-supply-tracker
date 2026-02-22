@@ -50,6 +50,7 @@ function Bubbles() {
 export default function App() {
   const [user,         setUser]         = useState(null);
   const [authReady,    setAuthReady]    = useState(false);
+  const [role,         setRole]         = useState(null);      // "user" | "admin"
   const [activeTab,    setActiveTab]    = useState("home");
   const [adminMode,    setAdminMode]    = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
@@ -58,12 +59,27 @@ export default function App() {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setAuthReady(true);
+      // If firebase user logs out, reset role too
+      if (!firebaseUser) setRole(null);
     });
     return unsub;
   }, []);
 
-  const handleLogout = () => signOut(auth);
+  const handleLogin = (userRole) => {
+    setRole(userRole);
+    // If admin logged in, go straight to admin mode
+    if (userRole === "admin") setAdminMode(true);
+  };
 
+  const handleLogout = () => {
+    signOut(auth);
+    setRole(null);
+    setAdminMode(false);
+    setSelectedCity(null);
+    setActiveTab("home");
+  };
+
+  // Loading spinner
   if (!authReady) {
     return (
       <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
@@ -73,16 +89,18 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  // Not logged in — show login
+  if (!user && role !== "admin") {
     return (
       <>
         <Bubbles />
-        <LoginPage onLogin={() => {}} />
+        <LoginPage onLogin={handleLogin} />
       </>
     );
   }
 
-  if (adminMode) {
+  // Admin mode
+  if (adminMode && role === "admin") {
     return <AdminDashboard onBack={() => setAdminMode(false)} selectedCity={selectedCity} />;
   }
 
@@ -101,10 +119,14 @@ export default function App() {
       style={{ background:"linear-gradient(160deg,#e0f2fe 0%,#bae6fd 50%,#e0f2fe 100%)" }}>
       <Bubbles />
       <div className="relative z-10 flex flex-col min-h-screen">
-        <Header user={user} onLogout={handleLogout}
-                onAdminClick={() => setAdminMode(true)}
-                selectedCity={selectedCity} />
-        {(activeTab === "wards" || activeTab === "home") && <StatsBar selectedCity={selectedCity} />}
+        <Header
+          user={user}
+          role={role}
+          onLogout={handleLogout}
+          onAdminClick={() => setAdminMode(true)}
+          selectedCity={selectedCity}
+        />
+        {activeTab === "wards" && <StatsBar selectedCity={selectedCity} />}
         <main className="flex-1" style={{ paddingBottom:100 }}>
           {renderPage()}
         </main>
