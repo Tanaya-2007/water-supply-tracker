@@ -1,11 +1,12 @@
-import { cityData, statusConfig } from "../citydata";
+import { statusConfig } from "../citydata";
+import { useCityData } from "../useCityData";
 
 const trendIcon  = { stable:"→", improving:"↑", worse:"↓" };
 const trendColor = { stable:"#0369a1", improving:"#16a34a", worse:"#dc2626" };
 const confidenceColor = (c) => c>=85?"#16a34a":c>=65?"#d97706":"#dc2626";
 
 export default function PredictPage({ selectedCity }) {
-  const city        = cityData[selectedCity];
+  const { data: city, loading } = useCityData(selectedCity);
   const predictions = city?.predictions || [];
   const wards       = city?.wards || [];
 
@@ -46,7 +47,24 @@ export default function PredictPage({ selectedCity }) {
         </p>
       </div>
 
-      
+      {/* Model info banner */}
+      <div style={{
+        display:"flex", alignItems:"center", gap:12,
+        padding:"14px 18px", borderRadius:18,
+        background:"linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.08))",
+        border:"1.5px solid rgba(99,102,241,0.2)",
+        marginBottom:24,
+      }}>
+        <span style={{fontSize:28}}>🤖</span>
+        <div>
+          <p style={{fontFamily:"'Raleway',sans-serif", fontWeight:900, fontSize:14,
+                      color:"#4338ca", margin:"0 0 3px"}}>AI Model Active</p>
+          <p style={{fontSize:12, fontWeight:600, color:"#6366f1", margin:0}}>
+            Trained on 6 months of supply data · Updates every 4 hours · {predictions.length} wards analysed
+          </p>
+        </div>
+      </div>
+
       {/* Prediction cards */}
       <div style={{
         display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16,

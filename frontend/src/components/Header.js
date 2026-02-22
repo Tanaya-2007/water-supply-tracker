@@ -20,7 +20,7 @@ export default function Header({ onAdminClick, selectedCity }) {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 16px;
+          padding: 20px;
           max-width: 1280px;
           margin: 0 auto;
           gap: 8px;

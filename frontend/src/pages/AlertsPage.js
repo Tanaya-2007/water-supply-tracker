@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { cityData, alertColors } from "../citydata";
+import { alertColors, statusConfig } from "../citydata";
+import { useCityData } from "../useCityData";
 
 export default function AlertsPage({ selectedCity }) {
-  const city   = cityData[selectedCity];
+  const { data: city, loading } = useCityData(selectedCity);
   const alerts = city?.alerts || [];
   const [filter, setFilter] = useState("all");
 

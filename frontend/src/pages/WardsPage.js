@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { cityData } from "../citydata";
+import { statusConfig } from "../citydata";
+import { useCityData } from "../useCityData";
 import WardCard       from "../components/WardCard";
 import WardDetailSheet from "../components/WardDetailSheet";
 import ReportModal    from "../components/ReportModal";
 
 export default function WardsPage({ selectedCity }) {
-  const city   = cityData[selectedCity];
-  const wards  = city?.wards || [];
+  const { data: city, loading } = useCityData(selectedCity);
+  const wards = city?.wards || [];
   const [filter,       setFilter]       = useState("all");
   const [selectedWard, setSelectedWard] = useState(null);
   const [reportWard,   setReportWard]   = useState(null);

@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cityData, alertColors, statusConfig } from "./citydata";
+import { db } from "./firebase";
+import { ref, update, onValue } from "firebase/database";
 
 const cityOptions = [
-  { key:"sangli", label:"Sangli-Miraj-Kupwad" },
-  { key:"pune",   label:"Pune" },
-  { key:"nashik", label:"Nashik" },
+  { key:"sangli", label:"🏙️ Sangli-Miraj-Kupwad" },
+  { key:"pune",   label:"🏙️ Pune" },
+  { key:"nashik", label:"🏙️ Nashik" },
 ];
 
 export default function AdminDashboard({ onBack, selectedCity: initCity = "sangli" }) {
@@ -16,11 +18,20 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [broadcastSent,setBroadcastSent]= useState(false);
 
-  // Local editable copy of wards per city
-  const [wardOverrides, setWardOverrides] = useState({});
-  const baseWards = cityData[city]?.wards || [];
-  const wards = baseWards.map(w => wardOverrides[`${city}-${w.id}`] || w);
-  const alerts = cityData[city]?.alerts || [];
+  // Live data from Firebase
+  const [wards,  setWards]  = useState([]);
+  const [alerts, setAlerts] = useState([]);
+
+  // Subscribe to Firebase on city change
+  useEffect(() => {
+    const unsub1 = onValue(ref(db, `cities/${city}/wards`), snap => {
+      setWards(snap.exists() ? Object.values(snap.val()) : cityData[city]?.wards || []);
+    });
+    const unsub2 = onValue(ref(db, `cities/${city}/alerts`), snap => {
+      setAlerts(snap.exists() ? Object.values(snap.val()) : cityData[city]?.alerts || []);
+    });
+    return () => { unsub1(); unsub2(); };
+  }, [city]);
 
   const flowing = wards.filter(w=>w.status==="green").length;
   const soon    = wards.filter(w=>w.status==="yellow").length;
@@ -28,17 +39,16 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
 
   const startEdit  = (ward) => { setEditingId(ward.id); setEditData({...ward}); };
   const cancelEdit = () => { setEditingId(null); setEditData({}); };
-  const saveEdit   = () => {
-    setWardOverrides(prev=>({...prev,[`${city}-${editingId}`]:{...editData}}));
+  const saveEdit = () => {
+    update(ref(db, `cities/${city}/wards/${editingId}`), editData);
     setSaved(editingId); setEditingId(null);
     setTimeout(()=>setSaved(null),2500);
   };
   const quickStatus = (id, status) => {
-    const ward = wards.find(w=>w.id===id);
-    setWardOverrides(prev=>({...prev,[`${city}-${id}`]:{
-      ...ward, status,
+    update(ref(db, `cities/${city}/wards/${id}`), {
+      status,
       delay: status==="green"?"On Time":status==="yellow"?"~45 mins":"Supply Off",
-    }}));
+    });
     setSaved(id); setTimeout(()=>setSaved(null),2000);
   };
 
@@ -114,7 +124,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
 
       <div style={{maxWidth:1280, margin:"0 auto", padding:"24px 16px 100px"}}>
 
-        {/* City selector — DROPDOWN */}
+        {/* City selector */}
         <div style={{
           display:"flex", alignItems:"center", gap:12, marginBottom:24,
           padding:"16px 20px", borderRadius:20,
@@ -127,24 +137,19 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
                          fontSize:14, color:"#0f172a", flexShrink:0}}>
             📍 Select City:
           </span>
-          <select
-            value={city}
-            onChange={e=>{ setCity(e.target.value); setEditingId(null); }}
-            style={{
-              padding:"10px 16px", borderRadius:12,
-              border:"1.5px solid rgba(6,182,212,0.3)",
-              background:"rgba(240,249,255,0.9)",
-              color:"#0369a1", fontWeight:800, fontSize:13,
-              fontFamily:"'Nunito',sans-serif",
-              cursor:"pointer", outline:"none",
-              boxShadow:"0 2px 8px rgba(6,182,212,0.1)",
-              minWidth:220,
-            }}
-          >
+          <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
             {cityOptions.map(c=>(
-              <option key={c.key} value={c.key}>{c.label}</option>
+              <button key={c.key} onClick={()=>{ setCity(c.key); setEditingId(null); }} style={{
+                padding:"9px 20px", borderRadius:999, border:"none",
+                cursor:"pointer", fontFamily:"'Nunito',sans-serif", fontWeight:800, fontSize:13,
+                background: city===c.key?"linear-gradient(135deg,#0ea5e9,#06b6d4)":"rgba(240,249,255,0.8)",
+                color:       city===c.key?"white":"#0369a1",
+                boxShadow:   city===c.key?"0 4px 12px rgba(6,182,212,0.35)":"none",
+                outline:     city===c.key?"none":"1.5px solid rgba(6,182,212,0.2)",
+                transition:"all 0.2s ease",
+              }}>{c.label}</button>
             ))}
-          </select>
+          </div>
         </div>
 
         {/* Summary cards */}
