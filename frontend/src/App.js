@@ -1,64 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
-import { auth } from "./firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import LoginPage   from "./pages/LoginPage";
-import Header      from "./components/Header";
-import Footer      from "./components/Footer";
-import StatsBar    from "./components/StatsBar";
-import WardsPage   from "./pages/WardsPage";
-import PredictPage from "./pages/PredictPage";
-import AlertsPage  from "./pages/AlertsPage";
-import HomePage    from "./pages/HomePage";
+import LoginPage      from "./pages/LoginPage";
+import AdminDashboard from "./AdminDashboard";
+import Header         from "./components/Header";
+import Footer         from "./components/Footer";
+import StatsBar       from "./components/StatsBar";
+import WardsPage      from "./pages/WardsPage";
+import PredictPage    from "./pages/PredictPage";
+import AlertsPage     from "./pages/AlertsPage";
+import HomePage       from "./pages/HomePage";
 
 const bubbles = [
-  { size:18,  left:"5%",  dur:"9s",  delay:"0s"    },
-  { size:10,  left:"11%", dur:"13s", delay:"2s"    },
-  { size:25,  left:"18%", dur:"10s", delay:"5s"    },
-  { size:14,  left:"24%", dur:"14s", delay:"1s"    },
-  { size:30,  left:"31%", dur:"11s", delay:"7s"    },
-  { size:8,   left:"38%", dur:"12s", delay:"3s"    },
-  { size:20,  left:"44%", dur:"9.5s",delay:"0.5s"  },
-  { size:12,  left:"51%", dur:"13s", delay:"4s"    },
-  { size:28,  left:"57%", dur:"10s", delay:"8s"    },
-  { size:16,  left:"63%", dur:"11s", delay:"1.5s"  },
-  { size:22,  left:"69%", dur:"12s", delay:"6s"    },
-  { size:9,   left:"75%", dur:"14s", delay:"2.5s"  },
-  { size:32,  left:"80%", dur:"10s", delay:"0.8s"  },
-  { size:13,  left:"86%", dur:"13s", delay:"9s"    },
-  { size:19,  left:"91%", dur:"11s", delay:"3.5s"  },
-  { size:7,   left:"96%", dur:"9s",  delay:"1.2s"  },
-  { size:24,  left:"35%", dur:"12s", delay:"4.5s"  },
-  { size:11,  left:"47%", dur:"10s", delay:"6.5s"  },
-  { size:17,  left:"73%", dur:"13s", delay:"2.2s"  },
-  { size:26,  left:"88%", dur:"11s", delay:"7.5s"  },
+  { size:18, left:"5%",  dur:"9s",   delay:"0s"   },
+  { size:10, left:"11%", dur:"13s",  delay:"2s"   },
+  { size:25, left:"18%", dur:"10s",  delay:"5s"   },
+  { size:14, left:"24%", dur:"14s",  delay:"1s"   },
+  { size:30, left:"31%", dur:"11s",  delay:"7s"   },
+  { size:8,  left:"38%", dur:"12s",  delay:"3s"   },
+  { size:20, left:"44%", dur:"9.5s", delay:"0.5s" },
+  { size:12, left:"51%", dur:"13s",  delay:"4s"   },
+  { size:28, left:"57%", dur:"10s",  delay:"8s"   },
+  { size:16, left:"63%", dur:"11s",  delay:"1.5s" },
+  { size:22, left:"69%", dur:"12s",  delay:"6s"   },
+  { size:9,  left:"75%", dur:"14s",  delay:"2.5s" },
+  { size:32, left:"80%", dur:"10s",  delay:"0.8s" },
+  { size:13, left:"86%", dur:"13s",  delay:"9s"   },
+  { size:19, left:"91%", dur:"11s",  delay:"3.5s" },
+  { size:7,  left:"96%", dur:"9s",   delay:"1.2s" },
+  { size:24, left:"35%", dur:"12s",  delay:"4.5s" },
+  { size:11, left:"47%", dur:"10s",  delay:"6.5s" },
+  { size:17, left:"73%", dur:"13s",  delay:"2.2s" },
+  { size:26, left:"88%", dur:"11s",  delay:"7.5s" },
 ];
 
 function Bubbles() {
   return (
     <>
       {bubbles.map((b, i) => (
-        <div key={i} className="bubble-particle"
-          style={{ width: b.size, height: b.size, left: b.left, animationDuration: b.dur, animationDelay: b.delay }} />
+        <div key={i} className="bubble-particle" style={{
+          width: b.size, height: b.size, left: b.left,
+          animationDuration: b.dur, animationDelay: b.delay,
+        }} />
       ))}
     </>
   );
 }
 
 export default function App() {
-  const [user,      setUser]      = useState(null);
-  const [authReady, setAuthReady] = useState(false);
-  const [activeTab, setActiveTab] = useState("wards");
+  // ✅ true = skip login. Set false when Firebase ready
+  const [loggedIn,   setLoggedIn]   = useState(true);
+  const [activeTab,  setActiveTab]  = useState("wards");
+  const [adminMode,  setAdminMode]  = useState(false);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setAuthReady(true);
-    });
-    return unsub;
-  }, []);
+  // 🔥 TODO: Firebase onAuthStateChanged
+  // useEffect(() => {
+  //   const unsub = onAuthStateChanged(auth, user => setLoggedIn(!!user));
+  //   return unsub;
+  // }, []);
 
-  const handleLogout = () => signOut(auth);
+  if (!loggedIn) {
+    return (
+      <>
+        <Bubbles />
+        <LoginPage onLogin={() => setLoggedIn(true)} />
+      </>
+    );
+  }
+
+  // ── Admin Dashboard — full screen takeover ──
+  if (adminMode) {
+    return <AdminDashboard onBack={() => setAdminMode(false)} />;
+  }
 
   const renderPage = () => {
     switch (activeTab) {
@@ -70,34 +82,36 @@ export default function App() {
     }
   };
 
-  if (!authReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center"
-        style={{ background: "linear-gradient(160deg,#e0f2fe 0%,#bae6fd 50%,#e0f2fe 100%)" }}>
-        <div className="text-4xl anim-drop-bob">💧</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <>
-        <Bubbles />
-        <LoginPage onLogin={() => {}} />
-      </>
-    );
-  }
-
   return (
-    <div className="min-h-screen relative"
-      style={{ background: "linear-gradient(160deg,#e0f2fe 0%,#bae6fd 50%,#e0f2fe 100%)" }}>
+    <div style={{
+      minHeight: "100vh",
+      position: "relative",
+      background: "linear-gradient(160deg,#e0f2fe 0%,#bae6fd 50%,#e0f2fe 100%)",
+    }}>
       <Bubbles />
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <Header user={user} onLogout={handleLogout} />
+      <div style={{ position:"relative", zIndex:10 }}>
+        <Header />
+
+        {/* ── Admin access button — top right corner ── */}
+        <div style={{
+          position:"fixed", top:14, right:14, zIndex:100,
+        }}>
+          <button onClick={() => setAdminMode(true)} style={{
+            display:"flex", alignItems:"center", gap:6,
+            padding:"7px 14px", borderRadius:999,
+            background:"rgba(255,255,255,0.25)",
+            backdropFilter:"blur(12px)",
+            border:"1.5px solid rgba(255,255,255,0.5)",
+            color:"#fff", fontWeight:800, fontSize:11,
+            cursor:"pointer", fontFamily:"'Nunito',sans-serif",
+            boxShadow:"0 4px 12px rgba(0,0,0,0.1)",
+          }}>
+            🛡️ Admin
+          </button>
+        </div>
+
         {(activeTab === "wards" || activeTab === "home") && <StatsBar />}
-        <main className="flex-1" style={{ paddingBottom: 72 }}>
-          {renderPage()}
-        </main>
+        <div style={{ paddingBottom:100 }}>{renderPage()}</div>
         <Footer activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
     </div>

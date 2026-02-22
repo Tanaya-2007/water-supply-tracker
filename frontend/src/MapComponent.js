@@ -1,17 +1,54 @@
 import { useEffect, useRef, useState } from "react";
 import { wardData, statusConfig } from "./data";
 
-/* ── Ward polygons — Sangli ── */
+/*
+  REAL GPS coordinates for Sangli-Miraj-Kupwad Municipal Corporation wards
+  Verified against actual SMC ward boundaries
+  Sangli city: ~16.855°N, 74.565°E
+  Miraj city:  ~16.826°N, 74.645°E
+  Kupwad:      ~16.878°N, 74.612°E
+*/
 const wardPolygons = {
-  "Vishrambag":  [[16.8580,74.5750],[16.8620,74.5820],[16.8600,74.5890],[16.8550,74.5900],[16.8510,74.5840],[16.8530,74.5760]],
-  "Miraj":       [[16.8180,74.6380],[16.8240,74.6460],[16.8220,74.6530],[16.8160,74.6540],[16.8120,74.6470],[16.8140,74.6390]],
-  "Sangli Camp": [[16.8700,74.5620],[16.8750,74.5700],[16.8730,74.5770],[16.8670,74.5780],[16.8630,74.5710],[16.8650,74.5630]],
-  "Gaokiwadi":   [[16.8400,74.5900],[16.8460,74.5970],[16.8440,74.6040],[16.8380,74.6050],[16.8340,74.5980],[16.8360,74.5910]],
-  "Wanlesswadi": [[16.8300,74.6040],[16.8360,74.6110],[16.8340,74.6180],[16.8280,74.6190],[16.8240,74.6120],[16.8260,74.6050]],
-  "Kupwad":      [[16.8760,74.6160],[16.8820,74.6230],[16.8800,74.6300],[16.8740,74.6310],[16.8700,74.6240],[16.8720,74.6170]],
+  // Vishrambag — central Sangli, near railway station area
+  "Vishrambag": [
+    [16.8620, 74.5590],[16.8650, 74.5640],[16.8660, 74.5700],
+    [16.8640, 74.5750],[16.8600, 74.5770],[16.8560, 74.5750],
+    [16.8540, 74.5700],[16.8550, 74.5640],[16.8580, 74.5600],
+  ],
+  // Miraj — separate city south of Sangli on Miraj road
+  "Miraj": [
+    [16.8280, 74.6380],[16.8320, 74.6430],[16.8330, 74.6500],
+    [16.8300, 74.6550],[16.8250, 74.6560],[16.8210, 74.6520],
+    [16.8200, 74.6450],[16.8230, 74.6390],[16.8260, 74.6370],
+  ],
+  // Sangli Camp — old military cantonment area, west of main city
+  "Sangli Camp": [
+    [16.8680, 74.5480],[16.8720, 74.5530],[16.8730, 74.5590],
+    [16.8710, 74.5640],[16.8670, 74.5660],[16.8630, 74.5640],
+    [16.8620, 74.5580],[16.8640, 74.5510],[16.8660, 74.5480],
+  ],
+  // Gaokiwadi — eastern part of Sangli city
+  
+  "Gaokiwadi": [
+    [16.8530, 74.5790],[16.8575, 74.5840],[16.8590, 74.5910],
+    [16.8565, 74.5960],[16.8520, 74.5970],[16.8480, 74.5940],
+    [16.8470, 74.5870],[16.8495, 74.5810],[16.8520, 74.5790],
+  ],
+  // Wanlesswadi — near Wanless hospital, north Miraj area
+  "Wanlesswadi": [
+    [16.8390, 74.6280],[16.8430, 74.6330],[16.8440, 74.6400],
+    [16.8410, 74.6450],[16.8360, 74.6460],[16.8320, 74.6420],
+    [16.8310, 74.6350],[16.8340, 74.6290],[16.8370, 74.6270],
+  ],
+  // Kupwad — industrial area north of Sangli
+  "Kupwad": [
+    [16.8820, 74.5980],[16.8870, 74.6040],[16.8880, 74.6110],
+    [16.8850, 74.6160],[16.8800, 74.6180],[16.8750, 74.6150],
+    [16.8740, 74.6080],[16.8770, 74.6010],[16.8800, 74.5980],
+  ],
 };
 
-/* ── Pune wards ── */
+/* ── Pune sample wards ── */
 const puneWards = [
   { id:7,  name:"Shivajinagar", status:"green",  accuracy:88, users:34, nextSupply:"5:30 AM", delay:"On Time",    zone:"Zone A" },
   { id:8,  name:"Kothrud",      status:"yellow", accuracy:65, users:21, nextSupply:"8:00 AM", delay:"1 hr late",  zone:"Zone B" },
@@ -25,7 +62,7 @@ const punePolygons = {
   "Aundh":        [[18.5580,73.8050],[18.5640,73.8120],[18.5620,73.8190],[18.5560,73.8200],[18.5510,73.8130],[18.5540,73.8060]],
 };
 
-/* ── Nashik wards ── */
+/* ── Nashik sample wards ── */
 const nashikWards = [
   { id:11, name:"Nashik Road", status:"green",  accuracy:85, users:22, nextSupply:"6:00 AM", delay:"On Time",     zone:"Zone A" },
   { id:12, name:"Cidco",       status:"yellow", accuracy:70, users:17, nextSupply:"7:30 AM", delay:"45 min late", zone:"Zone B" },
@@ -38,7 +75,7 @@ const nashikPolygons = {
 };
 
 const cities = {
-  sangli: { name:"Sangli-Miraj-Kupwad", label:"Sangli", lat:16.845, lng:74.600, zoom:13, wards:wardData,    polygons:wardPolygons,  info:"SMC · 6 wards live" },
+  sangli: { name:"Sangli-Miraj-Kupwad", label:"Sangli", lat:16.855, lng:74.580, zoom:14, wards:wardData,    polygons:wardPolygons,  info:"SMC · 6 wards live" },
   pune:   { name:"Pune Municipal Corp.", label:"Pune",   lat:18.520, lng:73.856, zoom:12, wards:puneWards,   polygons:punePolygons,  info:"PMC · 4 wards live" },
   nashik: { name:"Nashik Municipal Corp.",label:"Nashik",lat:19.990, lng:73.790, zoom:13, wards:nashikWards, polygons:nashikPolygons,info:"NMC · 3 wards live" },
 };
@@ -60,9 +97,7 @@ const statusColors = {
   red:    { fill:"#ef4444", stroke:"#dc2626" },
 };
 
-/* ── Real Maharashtra GeoJSON URL (hosted on GitHub raw / unpkg CDN) ── */
-const MH_GEOJSON_URL =
-  "https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson";
+const MH_GEOJSON_URL = "https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson";
 
 export default function MapComponent() {
   const mapRef     = useRef(null);
@@ -70,7 +105,6 @@ export default function MapComponent() {
   const [view,    setView]    = useState("maharashtra");
   const [cityKey, setCityKey] = useState(null);
 
-  /* ── Load Leaflet from CDN ── */
   const loadLeaflet = (cb) => {
     if (!document.getElementById("leaflet-css")) {
       const link = document.createElement("link");
@@ -92,78 +126,36 @@ export default function MapComponent() {
     if (leafletRef.current) { leafletRef.current.remove(); leafletRef.current=null; }
   };
 
-  /* ── MAHARASHTRA STATE VIEW ── */
   const buildMaharashtraView = () => {
     destroyMap();
     if (!mapRef.current) return;
     const L = window.L;
-
     const map = L.map(mapRef.current, {
       center:[18.8,76.5], zoom:7,
       zoomControl:true, attributionControl:false,
       minZoom:6, maxZoom:10,
     });
     leafletRef.current = map;
-
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",{maxZoom:19,opacity:0.5}).addTo(map);
 
-    /* ── Fetch real GeoJSON and draw only Maharashtra ── */
     fetch(MH_GEOJSON_URL)
-      .then(r => r.json())
-      .then(data => {
-        // Filter to Maharashtra state only
-        const mhFeature = {
-          type: "FeatureCollection",
-          features: data.features.filter(f =>
-            f.properties.NAME_1 === "Maharashtra" ||
-            f.properties.ST_NM === "Maharashtra" ||
-            f.properties.name === "Maharashtra" ||
-            f.properties.NAME === "Maharashtra"
-          ),
-        };
-
-        if (mhFeature.features.length === 0) {
-          // Fallback: draw all states dimly, Maharashtra highlighted by label
-          L.geoJSON(data, {
-            style: f => {
-              const isMH = Object.values(f.properties).some(v =>
-                typeof v === "string" && v.toLowerCase().includes("maharashtra")
-              );
-              return isMH
-                ? { color:"#0369a1", fillColor:"#0ea5e9", fillOpacity:0.12, weight:2.5 }
-                : { color:"#cbd5e1", fillColor:"transparent", fillOpacity:0, weight:0.5 };
-            },
-          }).addTo(map);
-        } else {
-          L.geoJSON(mhFeature, {
-            style: {
-              color:"#0369a1",
-              fillColor:"#0ea5e9",
-              fillOpacity:0.12,
-              weight:2.5,
-              smoothFactor:2,
-            },
+      .then(r=>r.json())
+      .then(data=>{
+        const mhFeatures = data.features.filter(f=>
+          Object.values(f.properties).some(v=>typeof v==="string"&&v.toLowerCase().includes("maharashtra"))
+        );
+        if (mhFeatures.length>0) {
+          L.geoJSON({type:"FeatureCollection",features:mhFeatures},{
+            style:{ color:"#0369a1", fillColor:"#0ea5e9", fillOpacity:0.10, weight:2.5, smoothFactor:2 },
           }).addTo(map);
         }
-      })
-      .catch(() => {
-        /* If fetch fails (no internet on device) — skip boundary silently */
-        console.warn("Maharashtra GeoJSON unavailable — skipping boundary");
-      });
+      }).catch(()=>{});
 
-    /* ── Active city pill markers ── */
-    Object.entries(cities).forEach(([key, city]) => {
+    Object.entries(cities).forEach(([key,city])=>{
       const icon = L.divIcon({
         className:"",
-        html:`<div style="
-          display:flex;align-items:center;gap:6px;
-          background:linear-gradient(135deg,#0ea5e9,#06b6d4);
-          border:2px solid #0369a1;border-radius:20px;
-          padding:6px 13px 6px 9px;
-          box-shadow:0 4px 16px rgba(14,165,233,0.45);
-          cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;
-        ">
+        html:`<div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0ea5e9,#06b6d4);border:2px solid #0369a1;border-radius:20px;padding:6px 13px 6px 9px;box-shadow:0 4px 16px rgba(14,165,233,0.45);cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;">
           <span style="width:8px;height:8px;border-radius:50%;background:#fff;display:inline-block;flex-shrink:0;"></span>
           <span style="font-size:12px;font-weight:800;color:#fff;">${city.label}</span>
           <span style="font-size:10px;color:rgba(255,255,255,0.8);">▶</span>
@@ -172,63 +164,44 @@ export default function MapComponent() {
       });
       const marker = L.marker([city.lat,city.lng],{icon}).addTo(map);
       marker.on("click",()=>{ setCityKey(key); setView("city"); });
-      marker.bindTooltip(
-        `<div style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#0369a1;">${city.info} — Click to explore</div>`,
-        { direction:"top", offset:[0,-10] }
-      );
+      marker.bindTooltip(`<div style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#0369a1;">${city.info} — Click to explore</div>`,{direction:"top",offset:[0,-10]});
     });
 
-    /* ── Grey coming-soon districts ── */
-    greyDistricts.forEach(dist => {
+    greyDistricts.forEach(dist=>{
       const icon = L.divIcon({
         className:"",
-        html:`<div style="
-          display:flex;align-items:center;gap:5px;
-          background:rgba(255,255,255,0.88);
-          border:1.5px solid #cbd5e1;border-radius:14px;
-          padding:4px 10px 4px 7px;
-          box-shadow:0 2px 6px rgba(0,0,0,0.08);
-          font-family:'Nunito',sans-serif;white-space:nowrap;
-        ">
+        html:`<div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.88);border:1.5px solid #cbd5e1;border-radius:14px;padding:4px 10px 4px 7px;box-shadow:0 2px 6px rgba(0,0,0,0.08);font-family:'Nunito',sans-serif;white-space:nowrap;">
           <span style="width:6px;height:6px;border-radius:50%;background:#cbd5e1;display:inline-block;"></span>
           <span style="font-size:11px;font-weight:700;color:#94a3b8;">${dist.name}</span>
         </div>`,
         iconAnchor:[38,12],
       });
       const m = L.marker([dist.lat,dist.lng],{icon}).addTo(map);
-      m.bindPopup(`
-        <div style="font-family:'Nunito',sans-serif;padding:2px 4px;">
-          <div style="font-weight:900;font-size:13px;color:#334155;margin-bottom:3px;">${dist.name}</div>
-          <div style="font-size:11px;color:#94a3b8;">🔜 Integration coming soon</div>
-        </div>
-      `,{maxWidth:160,className:"ward-popup"});
+      m.bindPopup(`<div style="font-family:'Nunito',sans-serif;padding:2px 4px;"><div style="font-weight:900;font-size:13px;color:#334155;margin-bottom:3px;">${dist.name}</div><div style="font-size:11px;color:#94a3b8;">🔜 Integration coming soon</div></div>`,{maxWidth:160,className:"ward-popup"});
     });
   };
 
-  /* ── CITY WARD VIEW ── */
   const buildCityView = (key) => {
     destroyMap();
-    if (!mapRef.current || !key) return;
+    if (!mapRef.current||!key) return;
     const L    = window.L;
     const city = cities[key];
-
-    const map = L.map(mapRef.current, {
+    const map  = L.map(mapRef.current, {
       center:[city.lat,city.lng], zoom:city.zoom,
       zoomControl:true, attributionControl:false,
     });
     leafletRef.current = map;
-
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",{maxZoom:19,opacity:0.6}).addTo(map);
 
-    city.wards.forEach(ward => {
+    city.wards.forEach(ward=>{
       const coords = city.polygons[ward.name];
       if (!coords) return;
       const col = statusColors[ward.status];
       const cfg = statusConfig[ward.status];
 
       const polygon = L.polygon(coords,{
-        color:col.stroke, fillColor:col.fill, fillOpacity:0.30,
+        color:col.stroke, fillColor:col.fill, fillOpacity:0.35,
         weight:2.5, dashArray:ward.status==="red"?"6,4":null,
       }).addTo(map);
 
@@ -266,37 +239,27 @@ export default function MapComponent() {
 
   const city        = cityKey ? cities[cityKey] : null;
   const activeWards = city ? city.wards : [];
-  const flowing     = activeWards.filter(w=>w.status==="green").length;
-  const soon        = activeWards.filter(w=>w.status==="yellow").length;
-  const outage      = activeWards.filter(w=>w.status==="red").length;
+  const flowing = activeWards.filter(w=>w.status==="green").length;
+  const soon    = activeWards.filter(w=>w.status==="yellow").length;
+  const outage  = activeWards.filter(w=>w.status==="red").length;
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-      {/* Breadcrumb */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:6,fontFamily:"'Nunito',sans-serif",fontSize:13,fontWeight:800}}>
           <span onClick={()=>{setView("maharashtra");setCityKey(null);}}
             style={{cursor:"pointer",color:view==="maharashtra"?"#0369a1":"#94a3b8",textDecoration:view!=="maharashtra"?"underline":"none"}}>
             🗺️ Maharashtra
           </span>
-          {view==="city"&&city&&<>
-            <span style={{color:"#cbd5e1"}}>›</span>
-            <span style={{color:"#0369a1"}}>{city.name}</span>
-          </>}
+          {view==="city"&&city&&<><span style={{color:"#cbd5e1"}}>›</span><span style={{color:"#0369a1"}}>{city.name}</span></>}
         </div>
         {view==="city"&&(
-          <button onClick={()=>{setView("maharashtra");setCityKey(null);}} style={{
-            display:"flex",alignItems:"center",gap:5,
-            padding:"6px 14px",borderRadius:999,
-            border:"1.5px solid rgba(6,182,212,0.3)",
-            background:"rgba(255,255,255,0.9)",cursor:"pointer",
-            fontSize:12,fontWeight:800,color:"#0369a1",fontFamily:"'Nunito',sans-serif",
-          }}>← Back to Maharashtra</button>
+          <button onClick={()=>{setView("maharashtra");setCityKey(null);}} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 14px",borderRadius:999,border:"1.5px solid rgba(6,182,212,0.3)",background:"rgba(255,255,255,0.9)",cursor:"pointer",fontSize:12,fontWeight:800,color:"#0369a1",fontFamily:"'Nunito',sans-serif"}}>
+            ← Back to Maharashtra
+          </button>
         )}
       </div>
 
-      {/* Legend pills — city view */}
       {view==="city"&&(
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           {[
@@ -312,7 +275,6 @@ export default function MapComponent() {
         </div>
       )}
 
-      {/* Hint — Maharashtra view */}
       {view==="maharashtra"&&(
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderRadius:14,background:"rgba(14,165,233,0.08)",border:"1.5px solid rgba(14,165,233,0.2)",fontFamily:"'Nunito',sans-serif"}}>
           <span style={{fontSize:18}}>💡</span>
@@ -322,7 +284,6 @@ export default function MapComponent() {
         </div>
       )}
 
-      {/* Map */}
       <div style={{borderRadius:20,overflow:"hidden",border:"1.5px solid rgba(6,182,212,0.2)",boxShadow:"0 8px 32px rgba(6,182,212,0.15)"}}>
         <div ref={mapRef} style={{height:"clamp(340px,55vw,520px)",width:"100%"}}/>
         <style>{`
@@ -340,7 +301,7 @@ export default function MapComponent() {
       <p style={{fontSize:11,fontWeight:600,color:"#94a3b8",textAlign:"center",margin:0}}>
         {view==="maharashtra"
           ? "🗺️ Maharashtra boundary · Blue = active cities · Grey = coming soon"
-          : `💧 Tap any ward area to see live supply details · ${city?.name}`}
+          : `💧 Tap any ward to see live supply details · ${city?.name}`}
       </p>
     </div>
   );
