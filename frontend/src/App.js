@@ -1,7 +1,5 @@
 import { useState } from "react";
 import "./App.css";
-import LoginPage      from "./pages/LoginPage";
-import AdminDashboard from "./AdminDashboard";
 import Header         from "./components/Header";
 import Footer         from "./components/Footer";
 import StatsBar       from "./components/StatsBar";
@@ -9,8 +7,10 @@ import WardsPage      from "./pages/WardsPage";
 import PredictPage    from "./pages/PredictPage";
 import AlertsPage     from "./pages/AlertsPage";
 import HomePage       from "./pages/HomePage";
+import AdminDashboard from "./AdminDashboard";
 
-const bubbles = [
+/* Rising glass bubbles  */
+const BUBBLES = [
   { size:18, left:"5%",  dur:"9s",   delay:"0s"   },
   { size:10, left:"11%", dur:"13s",  delay:"2s"   },
   { size:25, left:"18%", dur:"10s",  delay:"5s"   },
@@ -33,85 +33,64 @@ const bubbles = [
   { size:26, left:"88%", dur:"11s",  delay:"7.5s" },
 ];
 
-function Bubbles() {
-  return (
-    <>
-      {bubbles.map((b, i) => (
-        <div key={i} className="bubble-particle" style={{
-          width: b.size, height: b.size, left: b.left,
-          animationDuration: b.dur, animationDelay: b.delay,
-        }} />
-      ))}
-    </>
-  );
-}
-
 export default function App() {
-  // ✅ true = skip login. Set false when Firebase ready
-  const [loggedIn,   setLoggedIn]   = useState(true);
-  const [activeTab,  setActiveTab]  = useState("wards");
-  const [adminMode,  setAdminMode]  = useState(false);
+  const [activeTab,    setActiveTab]    = useState("home");
+  const [adminMode,    setAdminMode]    = useState(false);
+  const [selectedCity, setSelectedCity] = useState("sangli");
 
-  // 🔥 TODO: Firebase onAuthStateChanged
-  // useEffect(() => {
-  //   const unsub = onAuthStateChanged(auth, user => setLoggedIn(!!user));
-  //   return unsub;
-  // }, []);
-
-  if (!loggedIn) {
-    return (
-      <>
-        <Bubbles />
-        <LoginPage onLogin={() => setLoggedIn(true)} />
-      </>
-    );
-  }
-
-  // ── Admin Dashboard — full screen takeover ──
   if (adminMode) {
-    return <AdminDashboard onBack={() => setAdminMode(false)} />;
+    return (
+      <div style={{ minHeight:"100vh", position:"relative",
+                    background:"linear-gradient(160deg,#e0f7ff 0%,#bae6fd 30%,#e0f7ff 65%,#f0fbff 100%)" }}>
+        {BUBBLES.map((b,i) => (
+          <div key={i} className="bubble-particle" style={{ width:b.size, height:b.size, left:b.left, animationDuration:b.dur, animationDelay:b.delay }} />
+        ))}
+        <AdminDashboard
+          onBack={() => setAdminMode(false)}
+          selectedCity={selectedCity}
+          onCityChange={setSelectedCity}
+        />
+      </div>
+    );
   }
 
   const renderPage = () => {
     switch (activeTab) {
-      case "home":    return <HomePage />;
-      case "wards":   return <WardsPage />;
-      case "predict": return <PredictPage />;
-      case "alerts":  return <AlertsPage />;
-      default:        return <WardsPage />;
+      case "home":    return <HomePage    selectedCity={selectedCity} onCityChange={setSelectedCity} />;
+      case "wards":   return <WardsPage   selectedCity={selectedCity} />;
+      case "predict": return <PredictPage selectedCity={selectedCity} />;
+      case "alerts":  return <AlertsPage  selectedCity={selectedCity} />;
+      default:        return <HomePage    selectedCity={selectedCity} onCityChange={setSelectedCity} />;
     }
   };
 
   return (
     <div style={{
       minHeight: "100vh",
-      position: "relative",
-      background: "linear-gradient(160deg,#e0f2fe 0%,#bae6fd 50%,#e0f2fe 100%)",
+      background: "linear-gradient(160deg,#e0f7ff 0%,#bae6fd 30%,#e0f7ff 65%,#f0fbff 100%)",
     }}>
-      <Bubbles />
+      
+      {BUBBLES.map((b, i) => (
+        <div key={i} className="bubble-particle" style={{
+          width: b.size, height: b.size,
+          left: b.left,
+          animationDuration: b.dur,
+          animationDelay: b.delay,
+        }} />
+      ))}
+
+      
       <div style={{ position:"relative", zIndex:10 }}>
-        <Header />
-
-        {/* ── Admin access button — top right corner ── */}
-        <div style={{
-          position:"fixed", top:14, right:14, zIndex:100,
-        }}>
-          <button onClick={() => setAdminMode(true)} style={{
-            display:"flex", alignItems:"center", gap:6,
-            padding:"7px 14px", borderRadius:999,
-            background:"rgba(255,255,255,0.25)",
-            backdropFilter:"blur(12px)",
-            border:"1.5px solid rgba(255,255,255,0.5)",
-            color:"#fff", fontWeight:800, fontSize:11,
-            cursor:"pointer", fontFamily:"'Nunito',sans-serif",
-            boxShadow:"0 4px 12px rgba(0,0,0,0.1)",
-          }}>
-            🛡️ Admin
-          </button>
+        <Header
+          onAdminClick={() => setAdminMode(true)}
+          selectedCity={selectedCity}
+        />
+        {(activeTab === "wards" || activeTab === "home") && (
+          <StatsBar selectedCity={selectedCity} />
+        )}
+        <div style={{ paddingBottom:100 }}>
+          {renderPage()}
         </div>
-
-        {(activeTab === "wards" || activeTab === "home") && <StatsBar />}
-        <div style={{ paddingBottom:100 }}>{renderPage()}</div>
         <Footer activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
     </div>

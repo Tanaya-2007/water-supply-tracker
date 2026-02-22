@@ -7,13 +7,14 @@ const tabs = [
 
 export default function Footer({ activeTab, setActiveTab }) {
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50"
+    <nav className="fixed bottom-0 left-0 w-full"
       style={{
         background: "rgba(255,255,255,0.93)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
         boxShadow: "0 -4px 24px rgba(6,182,212,0.12)",
         borderTop: "1px solid rgba(6,182,212,0.15)",
+        zIndex:9999
       }}>
       <div className="max-w-lg mx-auto flex justify-around items-center px-2 py-1">
         {tabs.map(tab => {
