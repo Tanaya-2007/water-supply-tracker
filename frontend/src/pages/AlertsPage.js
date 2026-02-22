@@ -1,10 +1,23 @@
 import { useState } from "react";
 import { cityData, alertColors } from "../citydata";
 
-export default function AlertsPage({ selectedCity = "sangli" }) {
+export default function AlertsPage({ selectedCity }) {
   const city   = cityData[selectedCity];
   const alerts = city?.alerts || [];
   const [filter, setFilter] = useState("all");
+
+  if (!selectedCity) return (
+    <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  minHeight:"60vh", fontFamily:"'Nunito',sans-serif", textAlign:"center", padding:"20px"}}>
+      <div style={{fontSize:56, marginBottom:16}}>🔔</div>
+      <h3 style={{fontFamily:"'Raleway',sans-serif", fontWeight:900, fontSize:22, color:"#0f172a", marginBottom:8}}>
+        No City Selected
+      </h3>
+      <p style={{fontSize:14, fontWeight:700, color:"#64748b", maxWidth:280}}>
+        Go to the <strong>Map</strong> tab and tap a city to see alerts here.
+      </p>
+    </div>
+  );
 
   const filtered = filter === "all" ? alerts : alerts.filter(a => a.type === filter);
 

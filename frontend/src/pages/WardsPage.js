@@ -4,13 +4,26 @@ import WardCard       from "../components/WardCard";
 import WardDetailSheet from "../components/WardDetailSheet";
 import ReportModal    from "../components/ReportModal";
 
-export default function WardsPage({ selectedCity = "sangli" }) {
+export default function WardsPage({ selectedCity }) {
   const city   = cityData[selectedCity];
   const wards  = city?.wards || [];
-
   const [filter,       setFilter]       = useState("all");
   const [selectedWard, setSelectedWard] = useState(null);
   const [reportWard,   setReportWard]   = useState(null);
+
+  if (!selectedCity) return (
+    <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  minHeight:"60vh", fontFamily:"'Nunito',sans-serif", textAlign:"center", padding:"20px"}}>
+      <div style={{fontSize:56, marginBottom:16}}>🗺️</div>
+      <h3 style={{fontFamily:"'Raleway',sans-serif", fontWeight:900, fontSize:22, color:"#0f172a", marginBottom:8}}>
+        No City Selected
+      </h3>
+      <p style={{fontSize:14, fontWeight:700, color:"#64748b", maxWidth:280}}>
+        Go to the <strong>Map</strong> tab and tap Sangli, Pune or Nashik to see ward-level water supply status here.
+      </p>
+    </div>
+  );
+
 
   const filters = [
     { key:"all",    label:"All Wards" },

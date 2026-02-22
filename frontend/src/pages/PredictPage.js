@@ -4,10 +4,23 @@ const trendIcon  = { stable:"→", improving:"↑", worse:"↓" };
 const trendColor = { stable:"#0369a1", improving:"#16a34a", worse:"#dc2626" };
 const confidenceColor = (c) => c>=85?"#16a34a":c>=65?"#d97706":"#dc2626";
 
-export default function PredictPage({ selectedCity = "sangli" }) {
+export default function PredictPage({ selectedCity }) {
   const city        = cityData[selectedCity];
   const predictions = city?.predictions || [];
   const wards       = city?.wards || [];
+
+  if (!selectedCity) return (
+    <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  minHeight:"60vh", fontFamily:"'Nunito',sans-serif", textAlign:"center", padding:"20px"}}>
+      <div style={{fontSize:56, marginBottom:16}}>🔮</div>
+      <h3 style={{fontFamily:"'Raleway',sans-serif", fontWeight:900, fontSize:22, color:"#0f172a", marginBottom:8}}>
+        No City Selected
+      </h3>
+      <p style={{fontSize:14, fontWeight:700, color:"#64748b", maxWidth:280}}>
+        Go to the <strong>Map</strong> tab and tap a city to see ML predictions here.
+      </p>
+    </div>
+  );
 
   const getWard = (wardName) => wards.find(w=>w.name===wardName);
 
@@ -33,24 +46,7 @@ export default function PredictPage({ selectedCity = "sangli" }) {
         </p>
       </div>
 
-      {/* Model info banner */}
-      <div style={{
-        display:"flex", alignItems:"center", gap:12,
-        padding:"14px 18px", borderRadius:18,
-        background:"linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.08))",
-        border:"1.5px solid rgba(99,102,241,0.2)",
-        marginBottom:24,
-      }}>
-        <span style={{fontSize:28}}>🤖</span>
-        <div>
-          <p style={{fontFamily:"'Raleway',sans-serif", fontWeight:900, fontSize:14,
-                      color:"#4338ca", margin:"0 0 3px"}}>AI Model Active</p>
-          <p style={{fontSize:12, fontWeight:600, color:"#6366f1", margin:0}}>
-            Trained on 6 months of supply data · Updates every 4 hours · {predictions.length} wards analysed
-          </p>
-        </div>
-      </div>
-
+      
       {/* Prediction cards */}
       <div style={{
         display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16,
