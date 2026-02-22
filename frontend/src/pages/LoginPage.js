@@ -1,10 +1,6 @@
 import { useState } from "react";
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, provider } from "../firebase";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-} from "firebase/auth";
 
 export default function LoginPage({ onLogin }) {
   const [tab,      setTab]      = useState("signin");
@@ -16,36 +12,31 @@ export default function LoginPage({ onLogin }) {
   const [error,    setError]    = useState("");
 
   const handleSubmit = async () => {
-    setError("");
-    setLoading(true);
+    if (!email || !password) { setError("Please fill in all fields"); return; }
+    setLoading(true); setError("");
     try {
       if (tab === "signin") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      // onAuthStateChanged in App.js handles redirect automatically
+      onLogin();
     } catch (err) {
-      // Show friendly error messages
-      const msg = err.code === "auth/wrong-password"       ? "Incorrect password. Try again."
-                : err.code === "auth/user-not-found"       ? "No account found with this email."
-                : err.code === "auth/email-already-in-use" ? "Email already registered. Sign in instead."
-                : err.code === "auth/weak-password"        ? "Password must be at least 6 characters."
-                : err.code === "auth/invalid-email"        ? "Please enter a valid email address."
-                : "Something went wrong. Please try again.";
-      setError(msg);
+      setError(err.message.replace("Firebase: ", "").replace(/\(auth.*\)/, ""));
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogle = async () => {
-    setError("");
+    setError(""); setLoading(true);
     try {
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged handles redirect automatically
+      onLogin();
     } catch (err) {
       setError("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,17 +54,29 @@ export default function LoginPage({ onLogin }) {
       display:"flex", alignItems:"center", justifyContent:"center",
       overflow:"hidden",
     }}>
-      {/* Background */}
+      {/* Background — dark watery ocean image */}
       <div style={{
         position:"absolute", inset:0,
         backgroundImage:"url('https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=1920&q=90')",
         backgroundSize:"cover", backgroundPosition:"center",
         filter:"brightness(0.45) saturate(1.4)",
       }}/>
+
+      {/* Gradient overlay for readability */}
       <div style={{
         position:"absolute", inset:0,
         background:"linear-gradient(160deg,rgba(1,20,45,0.75) 0%,rgba(3,80,140,0.55) 60%,rgba(1,40,70,0.7) 100%)",
       }}/>
+
+      {/* Falling droplets on login too */}
+      {[
+        {w:8,h:12,left:"6%",dur:"9s",delay:"0s"},{w:5,h:8,left:"18%",dur:"12s",delay:"2s"},
+        {w:13,h:20,left:"32%",dur:"8s",delay:"4s"},{w:7,h:11,left:"55%",dur:"11s",delay:"1s"},
+        {w:10,h:15,left:"72%",dur:"9s",delay:"5s"},{w:6,h:9,left:"88%",dur:"13s",delay:"3s"},
+      ].map((d,i)=>(
+        <div key={i} className="droplet-particle"
+          style={{width:d.w,height:d.h,left:d.left,animationDuration:d.dur,animationDelay:d.delay,zIndex:1}}/>
+      ))}
 
       {/* Glassmorphism card */}
       <div style={{
@@ -111,7 +114,7 @@ export default function LoginPage({ onLogin }) {
           background:"rgba(255,255,255,0.08)", borderRadius:14, padding:4, marginBottom:24,
         }}>
           {["signin","signup"].map(t=>(
-            <button key={t} onClick={()=>{ setTab(t); setError(""); }} style={{
+            <button key={t} onClick={()=>setTab(t)} style={{
               padding:"10px", borderRadius:11, fontSize:13, fontWeight:800,
               fontFamily:"'Nunito',sans-serif", cursor:"pointer", border:"none",
               transition:"all 0.25s ease",
@@ -162,7 +165,7 @@ export default function LoginPage({ onLogin }) {
                 position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
                 background:"none", border:"none", cursor:"pointer",
                 fontSize:16, color:"rgba(255,255,255,0.5)",
-              }}>{showPass ? "Hide" : "Show"}</button>
+              }}>{showPass?"🙈":"👁️"}</button>
             </div>
           </div>
         </div>
@@ -170,12 +173,10 @@ export default function LoginPage({ onLogin }) {
         {/* Error message */}
         {error && (
           <div style={{
-            marginBottom:14, padding:"10px 14px", borderRadius:12,
-            background:"rgba(239,68,68,0.18)", border:"1px solid rgba(239,68,68,0.4)",
-            color:"#fca5a5", fontSize:13, fontWeight:700, fontFamily:"'Nunito',sans-serif",
-          }}>
-            ⚠️ {error}
-          </div>
+            padding:"10px 14px", borderRadius:12, marginBottom:14,
+            background:"rgba(239,68,68,0.15)", border:"1px solid rgba(239,68,68,0.4)",
+            color:"#fca5a5", fontSize:12, fontWeight:700,
+          }}>⚠️ {error}</div>
         )}
 
         {/* Submit */}
@@ -183,12 +184,12 @@ export default function LoginPage({ onLogin }) {
           width:"100%", padding:"14px", borderRadius:16, border:"none",
           background:"linear-gradient(135deg,#0ea5e9,#06b6d4)",
           color:"white", fontSize:15, fontWeight:800, fontFamily:"'Nunito',sans-serif",
-          cursor: loading ? "not-allowed" : "pointer", marginBottom:14,
+          cursor:"pointer", marginBottom:14,
           boxShadow:"0 8px 28px rgba(14,165,233,0.5)",
-          opacity: loading ? 0.7 : 1,
+          opacity:loading?0.7:1,
           transition:"opacity 0.2s ease",
         }}>
-          {loading ? "Please wait…" : tab==="signin" ? "Sign In →" : "Create Account →"}
+          {loading?"Please wait…":tab==="signin"?"Sign In →":"Create Account →"}
         </button>
 
         {/* Divider */}
