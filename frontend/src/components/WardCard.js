@@ -1,7 +1,14 @@
+/* 4-color status system:
+   green        = Water Flowing  (💧 green)
+   yellow       = Coming Soon    (⏳ yellow)
+   low_pressure = Low Pressure   (🔻 orange)
+   red          = No Supply      (🚱 red)
+*/
 const statusConfig = {
-  green:  { label:"Water Flowing", color:"#16a34a", dot:"#22c55e", bg:"rgba(220,252,231,0.55)", border:"#16a34a" },
-  yellow: { label:"Coming Soon",   color:"#d97706", dot:"#f59e0b", bg:"rgba(254,243,199,0.55)", border:"#d97706" },
-  red:    { label:"No Supply",     color:"#dc2626", dot:"#ef4444", bg:"rgba(254,226,226,0.55)", border:"#dc2626" },
+  green:        { label:"Water Flowing", color:"#16a34a", dot:"#22c55e", bg:"rgba(220,252,231,0.7)", border:"#16a34a" },
+  yellow:       { label:"Coming Soon",   color:"#ca8a04", dot:"#eab308", bg:"rgba(254,249,195,0.7)", border:"#ca8a04" },
+  low_pressure: { label:"Low Pressure",  color:"#ea580c", dot:"#f97316", bg:"rgba(255,237,213,0.7)", border:"#ea580c" },
+  red:          { label:"No Supply",     color:"#dc2626", dot:"#ef4444", bg:"rgba(254,226,226,0.7)", border:"#dc2626" },
 };
 
 const accColor = n => n>=80?"#16a34a":n>=60?"#d97706":"#dc2626";
@@ -56,7 +63,7 @@ export default function WardCard({ ward, onClick, onReport }) {
         <div style={{display:"flex", flexDirection:"column", gap:7}}>
           {[
             {icon:"🕐", label:"Next Supply", value:ward.nextSupply||"--"},
-            {icon:"⚡", label:"Delay",       value:ward.delay||"--",   bg:cfg.bg, border:`${cfg.border}22`, color:cfg.color},
+            {icon:"⚡", label:"Delay",       value:ward.delay||"--", bg:cfg.bg, border:`${cfg.border}22`, color:cfg.color},
             {icon:"👥", label:"Reports",     value:`${ward.users||0} active`},
           ].map((row,i)=>(
             <div key={i} style={{display:"flex", justifyContent:"space-between", alignItems:"center",
@@ -70,7 +77,7 @@ export default function WardCard({ ward, onClick, onReport }) {
         </div>
       </div>
 
-      {/* Report button - separate from onClick so it doesn't open detail */}
+      {/* Buttons */}
       <div style={{padding:"0 20px 16px", display:"flex", gap:8}}>
         <button
           onClick={e=>{ e.stopPropagation(); onClick(); }}
@@ -82,7 +89,7 @@ export default function WardCard({ ward, onClick, onReport }) {
           View Details →
         </button>
         <button
-          onClick={e=>{ e.stopPropagation(); onReport(); }}
+          onClick={e=>{ e.stopPropagation(); onReport && onReport(); }}
           style={{
             flex:1, padding:"9px", borderRadius:12, border:"none",
             background:"linear-gradient(135deg,#ef4444,#dc2626)",

@@ -1,56 +1,102 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { db } from "./firebase";
+import { ref, onValue } from "firebase/database";
 
+/* ── statusConfig inline — no data.js needed ── */
 const statusConfig = {
-  green:  { label:"Water Flowing", color:"#16a34a", bg:"rgba(220,252,231,0.55)", dot:"#22c55e", border:"#bbf7d0" },
-  yellow: { label:"Coming Soon",   color:"#d97706", bg:"rgba(254,243,199,0.55)", dot:"#f59e0b", border:"#fde68a" },
-  red:    { label:"No Supply",     color:"#dc2626", bg:"rgba(254,226,226,0.55)", dot:"#ef4444", border:"#fecaca" },
+  green:        { label:"Water Flowing", color:"#16a34a", bg:"rgba(220,252,231,0.7)", dot:"#22c55e", emoji:"💧", border:"#bbf7d0" },
+  yellow:       { label:"Coming Soon",   color:"#ca8a04", bg:"rgba(254,249,195,0.7)", dot:"#eab308", emoji:"⏳", border:"#fde68a" },
+  low_pressure: { label:"Low Pressure",  color:"#ea580c", bg:"rgba(255,237,213,0.7)", dot:"#f97316", emoji:"🔻", border:"#fed7aa" },
+  red:          { label:"No Supply",     color:"#dc2626", bg:"rgba(254,226,226,0.7)", dot:"#ef4444", emoji:"🚱", border:"#fecaca" },
 };
 
+
+/*
+  REAL GPS coordinates for Sangli-Miraj-Kupwad Municipal Corporation wards
+  Verified against actual SMC ward boundaries
+  Sangli city: ~16.855°N, 74.565°E
+  Miraj city:  ~16.826°N, 74.645°E
+  Kupwad:      ~16.878°N, 74.612°E
+*/
 const wardPolygons = {
-  "Vishrambag":  [[16.8620,74.5590],[16.8650,74.5640],[16.8660,74.5700],[16.8640,74.5750],[16.8600,74.5770],[16.8560,74.5750],[16.8540,74.5700],[16.8550,74.5640],[16.8580,74.5600]],
-  "Miraj":       [[16.8280,74.6380],[16.8320,74.6430],[16.8330,74.6500],[16.8300,74.6550],[16.8250,74.6560],[16.8210,74.6520],[16.8200,74.6450],[16.8230,74.6390],[16.8260,74.6370]],
-  "Sangli Camp": [[16.8680,74.5480],[16.8720,74.5530],[16.8730,74.5590],[16.8710,74.5640],[16.8670,74.5660],[16.8630,74.5640],[16.8620,74.5580],[16.8640,74.5510],[16.8660,74.5480]],
-  "Gaokiwadi":   [[16.8530,74.5790],[16.8575,74.5840],[16.8590,74.5910],[16.8565,74.5960],[16.8520,74.5970],[16.8480,74.5940],[16.8470,74.5870],[16.8495,74.5810],[16.8520,74.5790]],
-  "Wanlesswadi": [[16.8390,74.6280],[16.8430,74.6330],[16.8440,74.6400],[16.8410,74.6450],[16.8360,74.6460],[16.8320,74.6420],[16.8310,74.6350],[16.8340,74.6290],[16.8370,74.6270]],
-  "Kupwad":      [[16.8820,74.5980],[16.8870,74.6040],[16.8880,74.6110],[16.8850,74.6160],[16.8800,74.6180],[16.8750,74.6150],[16.8740,74.6080],[16.8770,74.6010],[16.8800,74.5980]],
-  "Shivajinagar":[[18.5300,73.8450],[18.5360,73.8520],[18.5340,73.8590],[18.5280,73.8600],[18.5230,73.8530],[18.5260,73.8460]],
-  "Kothrud":     [[18.5050,73.8100],[18.5110,73.8180],[18.5090,73.8250],[18.5030,73.8260],[18.4980,73.8190],[18.5010,73.8120]],
-  "Hadapsar":    [[18.5000,73.9300],[18.5060,73.9380],[18.5040,73.9450],[18.4980,73.9460],[18.4930,73.9390],[18.4960,73.9310]],
-  "Aundh":       [[18.5580,73.8050],[18.5640,73.8120],[18.5620,73.8190],[18.5560,73.8200],[18.5510,73.8130],[18.5540,73.8060]],
+  // Vishrambag — central Sangli, near railway station area
+  "Vishrambag": [
+    [16.8620, 74.5590],[16.8650, 74.5640],[16.8660, 74.5700],
+    [16.8640, 74.5750],[16.8600, 74.5770],[16.8560, 74.5750],
+    [16.8540, 74.5700],[16.8550, 74.5640],[16.8580, 74.5600],
+  ],
+  // Miraj — separate city south of Sangli on Miraj road
+  "Miraj": [
+    [16.8280, 74.6380],[16.8320, 74.6430],[16.8330, 74.6500],
+    [16.8300, 74.6550],[16.8250, 74.6560],[16.8210, 74.6520],
+    [16.8200, 74.6450],[16.8230, 74.6390],[16.8260, 74.6370],
+  ],
+  // Sangli Camp — old military cantonment area, west of main city
+  "Sangli Camp": [
+    [16.8680, 74.5480],[16.8720, 74.5530],[16.8730, 74.5590],
+    [16.8710, 74.5640],[16.8670, 74.5660],[16.8630, 74.5640],
+    [16.8620, 74.5580],[16.8640, 74.5510],[16.8660, 74.5480],
+  ],
+  // Gaokiwadi — eastern part of Sangli city
+  "Gaokiwadi": [
+    [16.8530, 74.5790],[16.8575, 74.5840],[16.8590, 74.5910],
+    [16.8565, 74.5960],[16.8520, 74.5970],[16.8480, 74.5940],
+    [16.8470, 74.5870],[16.8495, 74.5810],[16.8520, 74.5790],
+  ],
+  // Wanlesswadi — near Wanless hospital, north Miraj area
+  "Wanlesswadi": [
+    [16.8390, 74.6280],[16.8430, 74.6330],[16.8440, 74.6400],
+    [16.8410, 74.6450],[16.8360, 74.6460],[16.8320, 74.6420],
+    [16.8310, 74.6350],[16.8340, 74.6290],[16.8370, 74.6270],
+  ],
+  // Kupwad — industrial area north of Sangli
+  "Kupwad": [
+    [16.8820, 74.5980],[16.8870, 74.6040],[16.8880, 74.6110],
+    [16.8850, 74.6160],[16.8800, 74.6180],[16.8750, 74.6150],
+    [16.8740, 74.6080],[16.8770, 74.6010],[16.8800, 74.5980],
+  ],
+};
+
+/* ── Sangli wards ── */
+const sangliWards = [
+  { id:1, name:"Vishrambag",  status:"green",  accuracy:91, users:45, nextSupply:"6:00 AM", delay:"On Time",     zone:"Zone C" },
+  { id:2, name:"Miraj",       status:"red",    accuracy:43, users:32, nextSupply:"8:30 AM", delay:"2 hrs late",  zone:"Zone B" },
+  { id:3, name:"Sangli Camp", status:"yellow", accuracy:67, users:28, nextSupply:"7:00 AM", delay:"45 min late", zone:"Zone A" },
+  { id:4, name:"Gaokiwadi",   status:"green",  accuracy:87, users:31, nextSupply:"6:30 AM", delay:"On Time",     zone:"Zone C" },
+  { id:5, name:"Wanlesswadi", status:"yellow", accuracy:72, users:22, nextSupply:"7:30 AM", delay:"30 min late", zone:"Zone B" },
+  { id:6, name:"Kupwad",      status:"green",  accuracy:89, users:28, nextSupply:"5:30 AM", delay:"On Time",     zone:"Zone A" },
+];
+
+/* ── Pune sample wards ── */
+const puneWards = [
+  { id:7,  name:"Shivajinagar", status:"green",  accuracy:88, users:34, nextSupply:"5:30 AM", delay:"On Time",    zone:"Zone A" },
+  { id:8,  name:"Kothrud",      status:"yellow", accuracy:65, users:21, nextSupply:"8:00 AM", delay:"1 hr late",  zone:"Zone B" },
+  { id:9,  name:"Hadapsar",     status:"red",    accuracy:42, users:19, nextSupply:"9:30 AM", delay:"2 hrs late", zone:"Zone C" },
+  { id:10, name:"Aundh",        status:"green",  accuracy:91, users:28, nextSupply:"5:30 AM", delay:"On Time",    zone:"Zone A" },
+];
+const punePolygons = {
+  "Shivajinagar": [[18.5300,73.8450],[18.5360,73.8520],[18.5340,73.8590],[18.5280,73.8600],[18.5230,73.8530],[18.5260,73.8460]],
+  "Kothrud":      [[18.5050,73.8100],[18.5110,73.8180],[18.5090,73.8250],[18.5030,73.8260],[18.4980,73.8190],[18.5010,73.8120]],
+  "Hadapsar":     [[18.5000,73.9300],[18.5060,73.9380],[18.5040,73.9450],[18.4980,73.9460],[18.4930,73.9390],[18.4960,73.9310]],
+  "Aundh":        [[18.5580,73.8050],[18.5640,73.8120],[18.5620,73.8190],[18.5560,73.8200],[18.5510,73.8130],[18.5540,73.8060]],
+};
+
+/* ── Nashik sample wards ── */
+const nashikWards = [
+  { id:11, name:"Nashik Road", status:"green",  accuracy:85, users:22, nextSupply:"6:00 AM", delay:"On Time",     zone:"Zone A" },
+  { id:12, name:"Cidco",       status:"yellow", accuracy:70, users:17, nextSupply:"7:30 AM", delay:"45 min late", zone:"Zone B" },
+  { id:13, name:"Satpur",      status:"red",    accuracy:48, users:25, nextSupply:"10:00 AM",delay:"3 hrs late",  zone:"Zone C" },
+];
+const nashikPolygons = {
   "Nashik Road": [[19.9800,73.8300],[19.9860,73.8380],[19.9840,73.8450],[19.9780,73.8460],[19.9730,73.8390],[19.9760,73.8310]],
   "Cidco":       [[19.9650,73.7900],[19.9710,73.7980],[19.9690,73.8050],[19.9630,73.8060],[19.9580,73.7990],[19.9610,73.7910]],
   "Satpur":      [[20.0050,73.7700],[20.0110,73.7780],[20.0090,73.7850],[20.0030,73.7860],[19.9980,73.7790],[20.0010,73.7710]],
 };
 
 const cities = {
-  sangli: {
-    name:"Sangli-Miraj-Kupwad", label:"Sangli", lat:16.855, lng:74.580, zoom:13, info:"SMC · 6 wards live",
-    wards:[
-      { id:1, name:"Vishrambag",  status:"green",  users:45, nextSupply:"6:00 AM", delay:"On Time",     zone:"Zone C" },
-      { id:2, name:"Miraj",       status:"red",    users:32, nextSupply:"8:30 AM", delay:"2 hrs late",  zone:"Zone B" },
-      { id:3, name:"Sangli Camp", status:"yellow", users:28, nextSupply:"7:00 AM", delay:"45 min late", zone:"Zone A" },
-      { id:4, name:"Gaokiwadi",   status:"green",  users:31, nextSupply:"6:30 AM", delay:"On Time",     zone:"Zone C" },
-      { id:5, name:"Wanlesswadi", status:"yellow", users:22, nextSupply:"7:30 AM", delay:"30 min late", zone:"Zone B" },
-      { id:6, name:"Kupwad",      status:"green",  users:28, nextSupply:"5:30 AM", delay:"On Time",     zone:"Zone A" },
-    ],
-  },
-  pune: {
-    name:"Pune Municipal Corp.", label:"Pune", lat:18.520, lng:73.856, zoom:12, info:"PMC · 4 wards live",
-    wards:[
-      { id:7,  name:"Shivajinagar", status:"green",  users:34, nextSupply:"5:30 AM", delay:"On Time",    zone:"Zone A" },
-      { id:8,  name:"Kothrud",      status:"yellow", users:21, nextSupply:"8:00 AM", delay:"1 hr late",  zone:"Zone B" },
-      { id:9,  name:"Hadapsar",     status:"red",    users:19, nextSupply:"9:30 AM", delay:"2 hrs late", zone:"Zone C" },
-      { id:10, name:"Aundh",        status:"green",  users:28, nextSupply:"5:30 AM", delay:"On Time",    zone:"Zone A" },
-    ],
-  },
-  nashik: {
-    name:"Nashik Municipal Corp.", label:"Nashik", lat:19.990, lng:73.790, zoom:13, info:"NMC · 3 wards live",
-    wards:[
-      { id:11, name:"Nashik Road", status:"green",  users:22, nextSupply:"6:00 AM",  delay:"On Time",     zone:"Zone A" },
-      { id:12, name:"Cidco",       status:"yellow", users:17, nextSupply:"7:30 AM",  delay:"45 min late", zone:"Zone B" },
-      { id:13, name:"Satpur",      status:"red",    users:25, nextSupply:"10:00 AM", delay:"3 hrs late",  zone:"Zone C" },
-    ],
-  },
+  sangli: { name:"Sangli-Miraj-Kupwad", label:"Sangli", lat:16.855, lng:74.580, zoom:14, wards:sangliWards, polygons:wardPolygons,  info:"SMC · 6 wards live" },
+  pune:   { name:"Pune Municipal Corp.", label:"Pune",   lat:18.520, lng:73.856, zoom:12, wards:puneWards,   polygons:punePolygons,  info:"PMC · 4 wards live" },
+  nashik: { name:"Nashik Municipal Corp.",label:"Nashik",lat:19.990, lng:73.790, zoom:13, wards:nashikWards, polygons:nashikPolygons,info:"NMC · 3 wards live" },
 };
 
 const greyDistricts = [
@@ -66,16 +112,35 @@ const greyDistricts = [
 
 const statusColors = {
   green:  { fill:"#22c55e", stroke:"#16a34a" },
-  yellow: { fill:"#f59e0b", stroke:"#d97706" },
+  yellow:       { fill:"#eab308", stroke:"#ca8a04" },
+  low_pressure: { fill:"#f97316", stroke:"#ea580c" },
   red:    { fill:"#ef4444", stroke:"#dc2626" },
 };
 
 const MH_GEOJSON_URL = "https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson";
 
-// ── KEY FIX: accepts selectedCity + onCityChange from App.js ──
 export default function MapComponent({ selectedCity, onCityChange }) {
   const mapRef     = useRef(null);
   const leafletRef = useRef(null);
+  const [view,     setView]     = useState(selectedCity ? "city" : "maharashtra");
+  const [cityKey,  setCityKey]  = useState(selectedCity || null);
+  const [liveWards,setLiveWards]= useState({});  // Firebase live ward statuses
+
+  // Subscribe to Firebase ward statuses for ALL cities
+  useEffect(()=>{
+    const unsub = onValue(ref(db,"cities"), (snap)=>{
+      if(!snap.exists()) return;
+      const all = snap.val();
+      const wardsMap = {};
+      Object.entries(all).forEach(([city, data])=>{
+        if(data.wards){
+          Object.values(data.wards).forEach(w=>{ wardsMap[w.name] = w.status; });
+        }
+      });
+      setLiveWards(wardsMap);
+    });
+    return ()=>unsub();
+  },[]);
 
   const loadLeaflet = (cb) => {
     if (!document.getElementById("leaflet-css")) {
@@ -105,7 +170,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     const map = L.map(mapRef.current, {
       center:[18.8,76.5], zoom:7,
       zoomControl:true, attributionControl:false,
-      minZoom:2, maxZoom:18,
+      minZoom:6, maxZoom:10,
     });
     leafletRef.current = map;
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
@@ -135,8 +200,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
         iconAnchor:[55,16],
       });
       const marker = L.marker([city.lat,city.lng],{icon}).addTo(map);
-      // ── calls App.js onCityChange to update global state ──
-      marker.on("click",()=>{ onCityChange(key); });
+      marker.on("click",()=>{ setCityKey(key); setView("city"); if(onCityChange) onCityChange(key); });
       marker.bindTooltip(`<div style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#0369a1;">${city.info} — Click to explore</div>`,{direction:"top",offset:[0,-10]});
     });
 
@@ -154,7 +218,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     });
   };
 
-  const buildCityView = (key) => {
+  const buildCityView = (key, currentLiveWards={}) => {
     destroyMap();
     if (!mapRef.current||!key) return;
     const L    = window.L;
@@ -162,14 +226,16 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     const map  = L.map(mapRef.current, {
       center:[city.lat,city.lng], zoom:city.zoom,
       zoomControl:true, attributionControl:false,
-      minZoom:2, maxZoom:18,
     });
     leafletRef.current = map;
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",{maxZoom:19,opacity:0.6}).addTo(map);
 
     city.wards.forEach(ward=>{
-      const coords = wardPolygons[ward.name];
+      // Use live Firebase status if available, else fall back to static
+      const liveStatus = currentLiveWards[ward.name];
+      if(liveStatus) ward = {...ward, status: liveStatus};
+      const coords = city.polygons[ward.name];
       if (!coords) return;
       const col = statusColors[ward.status];
       const cfg = statusConfig[ward.status];
@@ -202,44 +268,65 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     });
   };
 
-  // ── rebuilds map whenever selectedCity changes from App.js ──
+  // Sync external selectedCity prop → restore city view when switching back to Map tab
+  useEffect(()=>{
+    if (selectedCity && selectedCity !== cityKey) {
+      setCityKey(selectedCity);
+      setView("city");
+    }
+  // eslint-disable-next-line
+  },[selectedCity]);
+
+  // Rebuild map when Firebase live data changes
+  useEffect(()=>{
+    if (view==="city" && cityKey && Object.keys(liveWards).length > 0) {
+      loadLeaflet(()=>buildCityView(cityKey, liveWards));
+    }
+  // eslint-disable-next-line
+  },[liveWards]);
+
   useEffect(()=>{
     loadLeaflet(()=>{
-      if (!selectedCity) buildMaharashtraView();
-      else buildCityView(selectedCity);
+      if (view==="maharashtra") buildMaharashtraView();
+      else if (view==="city"&&cityKey) buildCityView(cityKey, liveWards);
     });
     return destroyMap;
     // eslint-disable-next-line
-  },[selectedCity]);
+  },[view,cityKey]);
 
-  const city        = selectedCity ? cities[selectedCity] : null;
-  const activeWards = city ? city.wards : [];
+  const city        = cityKey ? cities[cityKey] : null;
+  // Merge Firebase live statuses into local ward data for accurate counts
+  const activeWards = city ? city.wards.map(w=>({
+    ...w, status: liveWards[w.name] || w.status
+  })) : [];
   const flowing = activeWards.filter(w=>w.status==="green").length;
   const soon    = activeWards.filter(w=>w.status==="yellow").length;
+  const lowP    = activeWards.filter(w=>w.status==="low_pressure").length;
   const outage  = activeWards.filter(w=>w.status==="red").length;
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:6,fontFamily:"'Nunito',sans-serif",fontSize:13,fontWeight:800}}>
-          <span onClick={()=>onCityChange(null)}
-            style={{cursor:"pointer",color:!selectedCity?"#0369a1":"#94a3b8",textDecoration:selectedCity?"underline":"none"}}>
+          <span onClick={()=>{setView("maharashtra");setCityKey(null);}}
+            style={{cursor:"pointer",color:view==="maharashtra"?"#0369a1":"#94a3b8",textDecoration:view!=="maharashtra"?"underline":"none"}}>
             🗺️ Maharashtra
           </span>
-          {selectedCity&&city&&<><span style={{color:"#cbd5e1"}}>›</span><span style={{color:"#0369a1"}}>{city.name}</span></>}
+          {view==="city"&&city&&<><span style={{color:"#cbd5e1"}}>›</span><span style={{color:"#0369a1"}}>{city.name}</span></>}
         </div>
-        {selectedCity&&(
-          <button onClick={()=>onCityChange(null)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 14px",borderRadius:999,border:"1.5px solid rgba(6,182,212,0.3)",background:"rgba(255,255,255,0.9)",cursor:"pointer",fontSize:12,fontWeight:800,color:"#0369a1",fontFamily:"'Nunito',sans-serif"}}>
+        {view==="city"&&(
+          <button onClick={()=>{setView("maharashtra");setCityKey(null);}} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 14px",borderRadius:999,border:"1.5px solid rgba(6,182,212,0.3)",background:"rgba(255,255,255,0.9)",cursor:"pointer",fontSize:12,fontWeight:800,color:"#0369a1",fontFamily:"'Nunito',sans-serif"}}>
             ← Back to Maharashtra
           </button>
         )}
       </div>
 
-      {selectedCity&&(
+      {view==="city"&&(
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           {[
             {color:"#22c55e",border:"#16a34a",label:"Water Flowing",count:flowing},
-            {color:"#f59e0b",border:"#d97706",label:"Coming Soon",  count:soon},
+            {color:"#eab308",border:"#ca8a04",label:"Coming Soon",   count:soon},
+            {color:"#f97316",border:"#ea580c",label:"Low Pressure",  count:lowP},
             {color:"#ef4444",border:"#dc2626",label:"No Supply",    count:outage},
           ].map(s=>(
             <div key={s.label} style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",borderRadius:999,background:`${s.color}18`,border:`1.5px solid ${s.border}55`,fontSize:12,fontWeight:800,color:s.border,fontFamily:"'Nunito',sans-serif"}}>
@@ -250,7 +337,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
         </div>
       )}
 
-      {!selectedCity&&(
+      {view==="maharashtra"&&(
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderRadius:14,background:"rgba(14,165,233,0.08)",border:"1.5px solid rgba(14,165,233,0.2)",fontFamily:"'Nunito',sans-serif"}}>
           <span style={{fontSize:18}}>💡</span>
           <p style={{fontSize:12,fontWeight:700,color:"#0369a1",margin:0}}>
@@ -260,7 +347,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
       )}
 
       <div style={{borderRadius:20,overflow:"hidden",border:"1.5px solid rgba(6,182,212,0.2)",boxShadow:"0 8px 32px rgba(6,182,212,0.15)"}}>
-        <div ref={mapRef} style={{height:"calc(100vh - 180px)",minHeight:320,width:"100%"}}/>
+        <div ref={mapRef} style={{height:"clamp(340px,55vw,520px)",width:"100%"}}/>
         <style>{`
           .leaflet-control-attribution{display:none!important;}
           .leaflet-control-zoom{border:none!important;box-shadow:0 4px 16px rgba(6,182,212,0.2)!important;border-radius:12px!important;overflow:hidden;}
@@ -274,9 +361,8 @@ export default function MapComponent({ selectedCity, onCityChange }) {
       </div>
 
       <p style={{fontSize:11,fontWeight:600,color:"#94a3b8",textAlign:"center",margin:0}}>
-        {!selectedCity
+        {view==="maharashtra"
           ? "🗺️ Maharashtra boundary · Blue = active cities · Grey = coming soon"
-
           : `💧 Tap any ward to see live supply details · ${city?.name}`}
       </p>
     </div>

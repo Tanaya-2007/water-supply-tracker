@@ -32,13 +32,20 @@ export default function AlertsPage({ selectedCity }) {
     </div>
   );
 
-  const filtered = filter === "all" ? alerts : alerts.filter(a => a.type === filter);
+  // Most recent alert first
+  const sortedAlerts = [...alerts].reverse();
+  const filtered = filter === "all" ? sortedAlerts : sortedAlerts.filter(a => a.type === filter);
   const high   = alerts.filter(a=>a.severity==="high").length;
   const medium = alerts.filter(a=>a.severity==="medium").length;
   const low    = alerts.filter(a=>a.severity==="low").length;
 
+  // Latest alert for floating banner — only show if it's an outage
+  const latestCritical = sortedAlerts.find(a => a.type === "outage");
+
   return (
     <div style={{maxWidth:1280, margin:"0 auto", padding:"20px 16px 100px"}}>
+
+      
       <div style={{marginBottom:16}}>
         <h2 style={{fontFamily:"'Raleway',sans-serif", fontWeight:900,
                     fontSize:"clamp(22px,5vw,32px)", color:"#0f172a",

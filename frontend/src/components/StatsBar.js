@@ -4,21 +4,23 @@ export default function StatsBar({ selectedCity }) {
   const { data: city } = useCityData(selectedCity);
   const wards = city?.wards || [];
 
-  const flowing   = wards.filter(w => w.status === "green").length;
-  const soon      = wards.filter(w => w.status === "yellow").length;
-  const outage    = wards.filter(w => w.status === "red").length;
-  const reporters = wards.reduce((a, b) => a + (b.users || 0), 0);
+  const flowing     = wards.filter(w => w.status === "green").length;
+  const soon        = wards.filter(w => w.status === "yellow").length;
+  const lowPressure = wards.filter(w => w.status === "low_pressure").length;
+  const outage      = wards.filter(w => w.status === "red").length;
+  const reporters   = wards.reduce((a, b) => a + (b.users || 0), 0);
 
   const stats = [
-    { value: flowing,   label: "Flowing",     sub: "Wards with supply", emoji: "💧", colorA: "#0ea5e9", colorB: "#06b6d4", shadow: "rgba(14,165,233,0.18)", top: "#0ea5e9" },
-    { value: soon,      label: "Coming Soon", sub: "Expected shortly",  emoji: "⏳", colorA: "#f59e0b", colorB: "#fbbf24", shadow: "rgba(245,158,11,0.18)",  top: "#f59e0b" },
-    { value: outage,    label: "No Supply",   sub: "Active outages",    emoji: "🚱", colorA: "#ef4444", colorB: "#f87171", shadow: "rgba(239,68,68,0.18)",   top: "#ef4444" },
-    { value: reporters, label: "Reporters",   sub: "Active citizens",   emoji: "👥", colorA: "#6366f1", colorB: "#818cf8", shadow: "rgba(99,102,241,0.18)",  top: "#6366f1" },
+    { value: flowing,     label: "Flowing",      sub: "Wards with supply",  emoji: "💧", colorA: "#0ea5e9", colorB: "#06b6d4", shadow: "rgba(14,165,233,0.18)",  top: "#0ea5e9" },
+    { value: soon,        label: "Coming Soon",  sub: "Expected shortly",   emoji: "⏳", colorA: "#f59e0b", colorB: "#fbbf24", shadow: "rgba(245,158,11,0.18)",   top: "#f59e0b" },
+    { value: lowPressure, label: "Low Pressure", sub: "Weak flow reported", emoji: "🔻", colorA: "#ea580c", colorB: "#f97316", shadow: "rgba(234,88,12,0.18)",    top: "#ea580c" },
+    { value: outage,      label: "No Supply",    sub: "Active outages",     emoji: "🚱", colorA: "#ef4444", colorB: "#f87171", shadow: "rgba(239,68,68,0.18)",    top: "#ef4444" },
+    { value: reporters,   label: "Reporters",    sub: "Active citizens",    emoji: "👥", colorA: "#6366f1", colorB: "#818cf8", shadow: "rgba(99,102,241,0.18)",   top: "#6366f1" },
   ];
 
   return (
     <section className="relative z-10 px-4 sm:px-6 lg:px-8 mt-4 mb-2">
-      <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         {stats.map((s, i) => (
           <div
             key={s.label}
