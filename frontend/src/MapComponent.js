@@ -277,9 +277,10 @@ export default function MapComponent({ selectedCity, onCityChange }) {
       </div>
 
       <p style={{fontSize:11, fontWeight:600, color:"#94a3b8", textAlign:"center", margin:0}}>
-        {!selectedCity
-          ? "🗺️ Maharashtra boundary · Blue = active cities"
-          : `💧 Tap any ward polygon to see live supply details · ${city?.name}`}
+  {!selectedCity
+    ? "🗺️ Maharashtra boundary . Blue = active cities"
+    : "✅ Real-time ML Supply Prediction Active for ${selectedCity}"
+  }
       </p>
     </div>
   );
