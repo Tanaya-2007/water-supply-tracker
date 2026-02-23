@@ -105,7 +105,8 @@ export default function MapComponent({ selectedCity, onCityChange }) {
         iconAnchor:[55,16],
       });
       const marker = L.marker([city.lat,city.lng],{icon}).addTo(map);
-      marker.on("click",()=>{ onCityChange(key); });
+      marker.on("click",()=>{ onCityChange(key);
+      getMLPrediction(city.label)  });
       marker.bindTooltip(`<div style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#0369a1;">Click to explore ${city.label} wards</div>`,{direction:"top",offset:[0,-10]});
     });
 
@@ -183,6 +184,24 @@ export default function MapComponent({ selectedCity, onCityChange }) {
   const flowing = activeWards.filter(w=>w.status==="green").length;
   const soon    = activeWards.filter(w=>w.status==="yellow").length;
   const outage  = activeWards.filter(w=>w.status==="red").length;
+
+  const getMLPrediction = async (cityName) => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        zone: cityName, 
+        hour: new Date().getHours(),
+        temperature: 32 // Matches your UI's current weather
+      })
+    });
+    const data = await response.json();
+    alert(`Prediction for ${cityName}: ${data.prediction === 1 ? "Water Flowing" : "No Supply"}`);
+  } catch (err) {
+    console.error("Make sure your FastAPI server is running on port 8000!");
+  }
+};
 
   return (
     <div style={{display:"flex", flexDirection:"column", gap:12}}>
