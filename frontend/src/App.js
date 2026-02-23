@@ -54,6 +54,19 @@ export default function App() {
   const [adminMode,    setAdminMode]    = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
 
+  const handlePredict = async (zoneName) => {
+  try {
+    const response = await axios.post("http://127.0.0.1:8000/predict", {
+      zone: zoneName,
+      hour: new Date().getHours(),
+      temperature: 30 // Example temp
+    });
+    alert("Prediction: " + response.data.prediction);
+  } catch (error) {
+    console.error("Error reaching backend:", error);
+  }
+};
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
