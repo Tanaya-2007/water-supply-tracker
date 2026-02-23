@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase";
 import { ref, onValue } from "firebase/database";
-import { cityData as fallback } from "./citydata";
 
 export function useCityData(cityKey) {
-  const [data,    setData]    = useState(cityKey ? fallback[cityKey] : null);
+  const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,11 +16,12 @@ export function useCityData(cityKey) {
         const raw = snap.val();
         setData({
           ...raw,
-          wards:  raw.wards  ? Object.values(raw.wards)  : [],
-          alerts: raw.alerts ? Object.values(raw.alerts) : [],
+          wards:       raw.wards       ? Object.values(raw.wards)       : [],
+          alerts:      raw.alerts      ? Object.values(raw.alerts)      : [],
+          predictions: raw.predictions ? Object.values(raw.predictions) : [],
         });
       } else {
-        setData(fallback[cityKey] || null);
+        setData(null || null);
       }
       setLoading(false);
     });

@@ -126,7 +126,7 @@ export default function App() {
           onAdminClick={() => setAdminMode(true)}
           selectedCity={selectedCity}
         />
-        {activeTab === "wards" && <StatsBar selectedCity={selectedCity} />}
+        {(activeTab === "wards" || activeTab === "home") && <StatsBar selectedCity={selectedCity} />}
         <main className="flex-1" style={{ paddingBottom:100 }}>
           {renderPage()}
         </main>

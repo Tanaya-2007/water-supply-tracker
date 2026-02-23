@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { statusConfig } from "../citydata";
 import { useCityData } from "../useCityData";
 import WardCard       from "../components/WardCard";
 import WardDetailSheet from "../components/WardDetailSheet";
@@ -89,7 +88,7 @@ export default function WardsPage({ selectedCity }) {
         <WardDetailSheet ward={selectedWard} onClose={() => setSelectedWard(null)} onReport={() => { setReportWard(selectedWard); setSelectedWard(null); }}/>
       )}
       {reportWard && (
-        <ReportModal ward={reportWard} onClose={() => setReportWard(null)}/>
+        <ReportModal ward={reportWard} cityKey={selectedCity} allWards={wards} onClose={() => setReportWard(null)}/>
       )}
     </div>
   );

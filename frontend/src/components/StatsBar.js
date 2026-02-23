@@ -1,10 +1,13 @@
-import { wardData } from "../data";
+import { useCityData } from "../useCityData";
 
-export default function StatsBar() {
-  const flowing   = wardData.filter(w => w.status === "green").length;
-  const soon      = wardData.filter(w => w.status === "yellow").length;
-  const outage    = wardData.filter(w => w.status === "red").length;
-  const reporters = wardData.reduce((a, b) => a + b.users, 0);
+export default function StatsBar({ selectedCity }) {
+  const { data: city } = useCityData(selectedCity);
+  const wards = city?.wards || [];
+
+  const flowing   = wards.filter(w => w.status === "green").length;
+  const soon      = wards.filter(w => w.status === "yellow").length;
+  const outage    = wards.filter(w => w.status === "red").length;
+  const reporters = wards.reduce((a, b) => a + (b.users || 0), 0);
 
   const stats = [
     { value: flowing,   label: "Flowing",     sub: "Wards with supply", emoji: "💧", colorA: "#0ea5e9", colorB: "#06b6d4", shadow: "rgba(14,165,233,0.18)", top: "#0ea5e9" },

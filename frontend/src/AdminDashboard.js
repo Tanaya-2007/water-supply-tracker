@@ -1,7 +1,21 @@
 import { useState, useEffect } from "react";
-import { cityData, alertColors, statusConfig } from "./citydata";
 import { db } from "./firebase";
 import { ref, update, onValue } from "firebase/database";
+
+const statusConfig = {
+  green:  { label:"Water Flowing", color:"#16a34a", dot:"#22c55e", bg:"rgba(220,252,231,0.55)", border:"#bbf7d0" },
+  yellow: { label:"Coming Soon",   color:"#d97706", dot:"#f59e0b", bg:"rgba(254,243,199,0.55)", border:"#fde68a" },
+  red:    { label:"No Supply",     color:"#dc2626", dot:"#ef4444", bg:"rgba(254,226,226,0.55)", border:"#fecaca" },
+};
+const alertColors = {
+  outage:   { color:"#dc2626", bg:"rgba(254,226,226,0.7)", border:"#fecaca", icon:"🚨", label:"Outage"   },
+  delay:    { color:"#d97706", bg:"rgba(254,243,199,0.7)", border:"#fde68a", icon:"⚠️", label:"Delay"    },
+  restored: { color:"#16a34a", bg:"rgba(220,252,231,0.7)", border:"#bbf7d0", icon:"✅", label:"Restored" },
+  info:     { color:"#0369a1", bg:"rgba(224,242,254,0.7)", border:"#bae6fd", icon:"ℹ️", label:"Info"     },
+};
+const cityNames = { sangli:"Sangli-Miraj-Kupwad", pune:"Pune Municipal Corp.", nashik:"Nashik Municipal Corp." };
+
+
 
 const cityOptions = [
   { key:"sangli", label:"🏙️ Sangli-Miraj-Kupwad" },
@@ -23,12 +37,12 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
   const [alerts, setAlerts] = useState([]);
 
   // Subscribe to Firebase on city change
-  useEffect(() => {
+  useState(() => {
     const unsub1 = onValue(ref(db, `cities/${city}/wards`), snap => {
-      setWards(snap.exists() ? Object.values(snap.val()) : cityData[city]?.wards || []);
+      setWards(snap.exists() ? Object.values(snap.val()) : []);
     });
     const unsub2 = onValue(ref(db, `cities/${city}/alerts`), snap => {
-      setAlerts(snap.exists() ? Object.values(snap.val()) : cityData[city]?.alerts || []);
+      setAlerts(snap.exists() ? Object.values(snap.val()) : []);
     });
     return () => { unsub1(); unsub2(); };
   }, [city]);
@@ -337,7 +351,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
           <div style={{display:"flex", flexDirection:"column", gap:10}}>
             <h3 style={{fontFamily:"'Raleway',sans-serif", fontWeight:900,
                          fontSize:20, color:"#0f172a", margin:"0 0 12px"}}>
-              Recent Alerts — {cityData[city]?.name}
+              Recent Alerts — {cityNames[city]||city}
             </h3>
             {alerts.map(alert=>{
               const ac = alertColors[alert.type];
@@ -375,7 +389,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
               📢 Broadcast to Citizens
             </h3>
             <p style={{fontSize:13, color:"#64748b", margin:"0 0 22px", fontWeight:600}}>
-              Send alert to {cityData[city]?.name} residents
+              Send alert to {cityNames[city]||city} residents
             </p>
             <div style={{display:"flex", flexDirection:"column", gap:14}}>
               <div>

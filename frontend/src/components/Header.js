@@ -20,7 +20,7 @@ export default function Header({ onAdminClick, selectedCity, role, onLogout }) {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 16px;
+          padding: 14px 20px;
           max-width: 1280px;
           margin: 0 auto;
           gap: 8px;
@@ -64,21 +64,19 @@ export default function Header({ onAdminClick, selectedCity, role, onLogout }) {
                          box-shadow:0 4px 16px rgba(0,0,0,0.18);
                          white-space:nowrap; transition:all 0.2s ease; }
         .header-logout:hover { background:#fee2e2; transform:scale(1.04); }
-        @media (max-width: 380px) {
-          .header-logout span { display:none; }
-          .header-logout { padding:7px 10px; }
+        /* Responsive */
+        @media (max-width: 600px) {
+          .header-clock        { display:none !important; }
+          .header-pill         { display:none !important; }
+          .header-sub          { display:none !important; }
+          .header-inner        { padding: 12px 14px; }
         }
-        /* Hide clock on very small screens */
-        @media (max-width: 380px) {
-          .header-clock { display:none; }
-          .header-sub   { display:none; }
-          .header-admin span { display:none; }
-          .header-admin { padding:7px 10px; }
-        }
-        /* Hide LIVE label on small screens */
-        @media (max-width: 480px) {
-          .header-pill span.label { display:none; }
-          .header-pill { padding:6px 8px; }
+        @media (max-width: 400px) {
+          .header-admin span   { display:none !important; }
+          .header-admin        { padding:7px 10px !important; }
+          .header-logout span  { display:none !important; }
+          .header-logout       { padding:7px 10px !important; }
+          .header-logo         { width:34px !important; height:34px !important; font-size:16px !important; }
         }
       `}</style>
 
