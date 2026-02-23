@@ -27,3 +27,13 @@ def predict(data: dict):
     df = pd.DataFrame([data])
     prediction = model.predict(df)
     return {"prediction": int(prediction[0])}
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], # Allows your React app to connect
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
