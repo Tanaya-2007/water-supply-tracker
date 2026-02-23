@@ -101,7 +101,15 @@ export default function App() {
 
   const renderPage = () => {
     switch (activeTab) {
-      case "home":    return <HomePage selectedCity={selectedCity} onCityChange={setSelectedCity} />;
+    case "home":
+default:
+  return <HomePage 
+    selectedCity={selectedCity} 
+    onCityChange={(city) => {
+      setSelectedCity(city);
+      handlePredict(city); // This sends the city name to your Backend terminal!
+    }} 
+  />;
       case "wards":   return <WardsPage selectedCity={selectedCity} />;
       case "predict": return <PredictPage selectedCity={selectedCity} />;
       case "alerts":  return <AlertsPage selectedCity={selectedCity} />;
