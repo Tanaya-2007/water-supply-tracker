@@ -124,7 +124,8 @@ export default function MapComponent({ selectedCity, onCityChange }) {
   const leafletRef = useRef(null);
   const [view,     setView]     = useState(selectedCity ? "city" : "maharashtra");
   const [cityKey,  setCityKey]  = useState(selectedCity || null);
-  const [liveWards,setLiveWards]= useState({});  // Firebase live ward statuses
+  const [liveWards,    setLiveWards]    = useState({});
+  const [filterStatus, setFilterStatus] = useState("all");
 
   // Subscribe to Firebase ward statuses for ALL cities
   useEffect(()=>{
@@ -218,7 +219,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     });
   };
 
-  const buildCityView = (key, currentLiveWards={}) => {
+  const buildCityView = (key, currentLiveWards={}, currentFilter="all") => {
     destroyMap();
     if (!mapRef.current||!key) return;
     const L    = window.L;
@@ -231,10 +232,12 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",{maxZoom:19,opacity:0.6}).addTo(map);
 
-    city.wards.forEach(ward=>{
-      // Use live Firebase status if available, else fall back to static
-      const liveStatus = currentLiveWards[ward.name];
-      if(liveStatus) ward = {...ward, status: liveStatus};
+    // Apply filter — only draw wards matching currentFilter
+    const wardsToShow = city.wards
+      .map(w=>({ ...w, status: currentLiveWards[w.name] || w.status }))
+      .filter(w=> currentFilter === "all" || w.status === currentFilter);
+
+    wardsToShow.forEach(ward=>{
       const coords = city.polygons[ward.name];
       if (!coords) return;
       const col = statusColors[ward.status];
@@ -273,6 +276,7 @@ export default function MapComponent({ selectedCity, onCityChange }) {
     if (selectedCity && selectedCity !== cityKey) {
       setCityKey(selectedCity);
       setView("city");
+      setFilterStatus("all"); // reset filter on city change
     }
   // eslint-disable-next-line
   },[selectedCity]);
@@ -280,15 +284,23 @@ export default function MapComponent({ selectedCity, onCityChange }) {
   // Rebuild map when Firebase live data changes
   useEffect(()=>{
     if (view==="city" && cityKey && Object.keys(liveWards).length > 0) {
-      loadLeaflet(()=>buildCityView(cityKey, liveWards));
+      loadLeaflet(()=>buildCityView(cityKey, liveWards, filterStatus));
     }
   // eslint-disable-next-line
   },[liveWards]);
 
+  // Rebuild map when filter changes
+  useEffect(()=>{
+    if (view==="city" && cityKey) {
+      loadLeaflet(()=>buildCityView(cityKey, liveWards, filterStatus));
+    }
+  // eslint-disable-next-line
+  },[filterStatus]);
+
   useEffect(()=>{
     loadLeaflet(()=>{
       if (view==="maharashtra") buildMaharashtraView();
-      else if (view==="city"&&cityKey) buildCityView(cityKey, liveWards);
+      else if (view==="city"&&cityKey) buildCityView(cityKey, liveWards, filterStatus);
     });
     return destroyMap;
     // eslint-disable-next-line
@@ -322,17 +334,27 @@ export default function MapComponent({ selectedCity, onCityChange }) {
       </div>
 
       {view==="city"&&(
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div style={{
+          display:"flex", gap:10, overflowX:"auto", paddingBottom:4,
+          scrollbarWidth:"none",
+        }}>
           {[
-            {color:"#22c55e",border:"#16a34a",label:"Water Flowing",count:flowing},
-            {color:"#eab308",border:"#ca8a04",label:"Coming Soon",   count:soon},
-            {color:"#f97316",border:"#ea580c",label:"Low Pressure",  count:lowP},
-            {color:"#ef4444",border:"#dc2626",label:"No Supply",    count:outage},
-          ].map(s=>(
-            <div key={s.label} style={{display:"flex",alignItems:"center",gap:7,padding:"6px 14px",borderRadius:999,background:`${s.color}18`,border:`1.5px solid ${s.border}55`,fontSize:12,fontWeight:800,color:s.border,fontFamily:"'Nunito',sans-serif"}}>
-              <span style={{width:9,height:9,borderRadius:"50%",background:s.color,display:"inline-block"}}/>
-              {s.count} {s.label}
-            </div>
+            { key:"all",          label:"All Wards"      },
+            { key:"green",        label:"💧 Flowing"      },
+            { key:"yellow",       label:"⏳ Coming Soon"  },
+            { key:"low_pressure", label:"🔻 Low Pressure" },
+            { key:"red",          label:"🚱 No Supply"    },
+          ].map(f=>(
+            <button key={f.key} onClick={()=>setFilterStatus(f.key)} style={{
+              padding:"10px 20px", borderRadius:999, whiteSpace:"nowrap",
+              flexShrink:0, border:"none", cursor:"pointer",
+              fontFamily:"'Nunito',sans-serif", fontWeight:800, fontSize:13,
+              background: filterStatus===f.key ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.6)",
+              color:       filterStatus===f.key ? "#0369a1" : "#64748b",
+              outline:     filterStatus===f.key ? "1.5px solid rgba(6,182,212,0.5)" : "1.5px solid transparent",
+              boxShadow:   filterStatus===f.key ? "0 4px 12px rgba(6,182,212,0.2)" : "none",
+              transition:"all 0.2s ease",
+            }}>{f.label}</button>
           ))}
         </div>
       )}
