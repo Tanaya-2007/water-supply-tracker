@@ -21,11 +21,25 @@ encoder = joblib.load("zone_encoder.joblib")
 def home():
     return {"message": "Water Supply Prediction API is Running"}
 
+import datetime
+
 @app.post("/predict")
 def predict(data: dict):
-    # This converts the frontend data into a format the ML model understands
-    df = pd.DataFrame([data])
+    # 1. Get current day of the week (0=Monday, 6=Sunday)
+    current_day = datetime.datetime.now().weekday()
+    
+    # 2. Map frontend data to the EXACT column names used during training
+    input_data = {
+        "Day_of_Week": [current_day],
+        "Hour_of_Day": [data.get("hour")],
+        "Temperature": [data.get("temperature")],
+        "Zone_ID": [data.get("zone")]
+    }
+    
+    # 3. Create DataFrame and get prediction
+    df = pd.DataFrame(input_data)
     prediction = model.predict(df)
+    
     return {"prediction": int(prediction[0])}
 
 from fastapi.middleware.cors import CORSMiddleware
