@@ -25,10 +25,9 @@ import datetime
 
 @app.post("/predict")
 def predict(data: dict):
-    # 1. Get current day of the week (0=Monday, 6=Sunday)
     current_day = datetime.datetime.now().weekday()
     
-    # 2. Map frontend data to the EXACT column names used during training
+    # Re-ordered to match the training data exactly
     input_data = {
         "Day_of_Week": [current_day],
         "Hour_of_Day": [data.get("hour")],
@@ -36,10 +35,11 @@ def predict(data: dict):
         "Zone_ID": [data.get("zone")]
     }
     
-    # 3. Create DataFrame and get prediction
     df = pd.DataFrame(input_data)
-    prediction = model.predict(df)
+    # This ensures the columns are in the correct sequence before predicting
+    df = df[["Day_of_Week", "Hour_of_Day", "Temperature", "Zone_ID"]]
     
+    prediction = model.predict(df)
     return {"prediction": int(prediction[0])}
 
 from fastapi.middleware.cors import CORSMiddleware
