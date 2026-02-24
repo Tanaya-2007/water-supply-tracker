@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import "./App.css";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -50,36 +51,34 @@ function Bubbles() {
 export default function App() {
   const [user,         setUser]         = useState(null);
   const [authReady,    setAuthReady]    = useState(false);
-  const [role,         setRole]         = useState(null);      // "user" | "admin"
   const [activeTab,    setActiveTab]    = useState("home");
   const [adminMode,    setAdminMode]    = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
+  const [role,         setRole]         = useState(null); // "user" | "admin"
+
+  const handlePredict = async (zoneName) => {
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/predict", {
+        zone: zoneName,
+        hour: new Date().getHours(),
+        temperature: 30,
+      });
+      console.log("Prediction:", response.data.prediction);
+    } catch (error) {
+      console.error("Error reaching ML backend:", error);
+    }
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setAuthReady(true);
-      // If firebase user logs out, reset role too
-      if (!firebaseUser) setRole(null);
     });
     return unsub;
   }, []);
 
-  const handleLogin = (userRole) => {
-    setRole(userRole);
-    // If admin logged in, go straight to admin mode
-    if (userRole === "admin") setAdminMode(true);
-  };
+  const handleLogout = () => signOut(auth);
 
-  const handleLogout = () => {
-    signOut(auth);
-    setRole(null);
-    setAdminMode(false);
-    setSelectedCity(null);
-    setActiveTab("home");
-  };
-
-  // Loading spinner
   if (!authReady) {
     return (
       <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
@@ -89,28 +88,38 @@ export default function App() {
     );
   }
 
-  // Not logged in — show login
   if (!user && role !== "admin") {
     return (
       <>
         <Bubbles />
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage onLogin={(r) => {
+          setRole(r);
+          if (r === "admin") setAdminMode(true);
+        }} />
       </>
     );
   }
 
-  // Admin mode
-  if (adminMode && role === "admin") {
-    return <AdminDashboard onBack={() => setAdminMode(false)} selectedCity={selectedCity} />;
+  if (adminMode) {
+    return <AdminDashboard onBack={() => setAdminMode(false)} selectedCity={selectedCity || "sangli"} />;
   }
 
   const renderPage = () => {
     switch (activeTab) {
-      case "home":    return <HomePage selectedCity={selectedCity} onCityChange={setSelectedCity} />;
       case "wards":   return <WardsPage selectedCity={selectedCity} />;
       case "predict": return <PredictPage selectedCity={selectedCity} />;
       case "alerts":  return <AlertsPage selectedCity={selectedCity} />;
-      default:        return <HomePage selectedCity={selectedCity} onCityChange={setSelectedCity} />;
+      case "home":
+      default:
+        return (
+          <HomePage
+            selectedCity={selectedCity}
+            onCityChange={(city) => {
+              setSelectedCity(city);
+              handlePredict(city);
+            }}
+          />
+        );
     }
   };
 
@@ -119,13 +128,9 @@ export default function App() {
       style={{ background:"linear-gradient(160deg,#e0f2fe 0%,#bae6fd 50%,#e0f2fe 100%)" }}>
       <Bubbles />
       <div className="relative z-10 flex flex-col min-h-screen">
-        <Header
-          user={user}
-          role={role}
-          onLogout={handleLogout}
-          onAdminClick={() => setAdminMode(true)}
-          selectedCity={selectedCity}
-        />
+        <Header user={user} onLogout={handleLogout}
+                onAdminClick={() => setAdminMode(true)}
+                selectedCity={selectedCity} />
         {(activeTab === "wards" || activeTab === "home") && <StatsBar selectedCity={selectedCity} />}
         <main className="flex-1" style={{ paddingBottom:100 }}>
           {renderPage()}

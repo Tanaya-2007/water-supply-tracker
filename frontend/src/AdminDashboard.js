@@ -1,67 +1,94 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase";
-import { ref, update, onValue } from "firebase/database";
+import { ref, onValue, update, push } from "firebase/database";
 
+/* ── defined inline — no citydata.js needed ── */
+const cityData = {
+  sangli: { name:"Sangli-Miraj-Kupwad", corp:"SMC" },
+  pune:   { name:"Pune Municipal Corporation", corp:"PMC" },
+  nashik: { name:"Nashik Municipal Corporation", corp:"NMC" },
+};
 const statusConfig = {
-  green:  { label:"Water Flowing", color:"#16a34a", dot:"#22c55e", bg:"rgba(220,252,231,0.55)", border:"#bbf7d0" },
-  yellow: { label:"Coming Soon",   color:"#d97706", dot:"#f59e0b", bg:"rgba(254,243,199,0.55)", border:"#fde68a" },
-  red:    { label:"No Supply",     color:"#dc2626", dot:"#ef4444", bg:"rgba(254,226,226,0.55)", border:"#fecaca" },
+  green:        { label:"Flowing",      color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", dot:"#22c55e" },
+  yellow:       { label:"Coming Soon",  color:"#d97706", bg:"#fffbeb", border:"#fde68a", dot:"#f59e0b" },
+  low_pressure: { label:"Low Pressure", color:"#ea580c", bg:"#fff7ed", border:"#fed7aa", dot:"#f97316" },
+  red:          { label:"No Supply",    color:"#dc2626", bg:"#fff5f5", border:"#fecaca", dot:"#ef4444" },
 };
 const alertColors = {
-  outage:   { color:"#dc2626", bg:"rgba(254,226,226,0.7)", border:"#fecaca", icon:"🚨", label:"Outage"   },
-  delay:    { color:"#d97706", bg:"rgba(254,243,199,0.7)", border:"#fde68a", icon:"⚠️", label:"Delay"    },
-  restored: { color:"#16a34a", bg:"rgba(220,252,231,0.7)", border:"#bbf7d0", icon:"✅", label:"Restored" },
-  info:     { color:"#0369a1", bg:"rgba(224,242,254,0.7)", border:"#bae6fd", icon:"ℹ️", label:"Info"     },
+  outage:   { color:"#dc2626", bg:"#fff5f5", border:"#fecaca", icon:"🚨" },
+  delay:    { color:"#d97706", bg:"#fffbeb", border:"#fde68a", icon:"⚠️" },
+  restored: { color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", icon:"✅" },
+  info:     { color:"#0ea5e9", bg:"#f0f9ff", border:"#bae6fd", icon:"ℹ️" },
 };
-const cityNames = { sangli:"Sangli-Miraj-Kupwad", pune:"Pune Municipal Corp.", nashik:"Nashik Municipal Corp." };
-
 
 
 const cityOptions = [
-  { key:"sangli", label:"🏙️ Sangli-Miraj-Kupwad" },
-  { key:"pune",   label:"🏙️ Pune" },
-  { key:"nashik", label:"🏙️ Nashik" },
+  { key:"sangli", label:"Sangli-Miraj-Kupwad" },
+  { key:"pune",   label:"Pune" },
+  { key:"nashik", label:"Nashik" },
 ];
 
-export default function AdminDashboard({ onBack, selectedCity: initCity = "sangli" }) {
-  const [city,         setCity]         = useState(initCity);
+export default function AdminDashboard({ onBack, selectedCity: initCity }) {
+  const [city,         setCity]         = useState(initCity || "sangli");
   const [activeTab,    setActiveTab]    = useState("wards");
   const [editingId,    setEditingId]    = useState(null);
   const [editData,     setEditData]     = useState({});
   const [saved,        setSaved]        = useState(null);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [broadcastSent,setBroadcastSent]= useState(false);
+  const [liveWards,    setLiveWards]    = useState([]);
+  const [liveAlerts,   setLiveAlerts]   = useState([]);
 
-  // Live data from Firebase
-  const [wards,  setWards]  = useState([]);
-  const [alerts, setAlerts] = useState([]);
-
-  // Subscribe to Firebase on city change
-  useState(() => {
-    const unsub1 = onValue(ref(db, `cities/${city}/wards`), snap => {
-      setWards(snap.exists() ? Object.values(snap.val()) : []);
+  // Subscribe to Firebase for selected city
+  useEffect(()=>{
+    const wardsRef = ref(db, `cities/${city}/wards`);
+    const alertsRef = ref(db, `cities/${city}/alerts`);
+    const u1 = onValue(wardsRef, snap=>{
+      if(snap.exists()){
+        const data = snap.val();
+        setLiveWards(Array.isArray(data) ? data : Object.values(data));
+      } else setLiveWards([]);
     });
-    const unsub2 = onValue(ref(db, `cities/${city}/alerts`), snap => {
-      setAlerts(snap.exists() ? Object.values(snap.val()) : []);
+    const u2 = onValue(alertsRef, snap=>{
+      if(snap.exists()){
+        const data = snap.val();
+        setLiveAlerts(Array.isArray(data) ? data : Object.values(data));
+      } else setLiveAlerts([]);
     });
-    return () => { unsub1(); unsub2(); };
-  }, [city]);
+    return ()=>{ u1(); u2(); };
+  },[city]);
 
-  const flowing = wards.filter(w=>w.status==="green").length;
-  const soon    = wards.filter(w=>w.status==="yellow").length;
-  const outage  = wards.filter(w=>w.status==="red").length;
+  const wards  = liveWards;
+  const alerts = liveAlerts;
+
+  const flowing  = wards.filter(w=>w.status==="green").length;
+  const soon     = wards.filter(w=>w.status==="yellow").length;
+  const lowP     = wards.filter(w=>w.status==="low_pressure").length;
+  const outage   = wards.filter(w=>w.status==="red").length;
 
   const startEdit  = (ward) => { setEditingId(ward.id); setEditData({...ward}); };
   const cancelEdit = () => { setEditingId(null); setEditData({}); };
-  const saveEdit = () => {
-    update(ref(db, `cities/${city}/wards/${editingId}`), editData);
+
+  const saveEdit = async () => {
+    const ward = wards.find(w=>w.id===editingId);
+    if(!ward) return;
+    const wardPath = `cities/${city}/wards/${editingId-1}`;
+    await update(ref(db, wardPath), {...editData});
     setSaved(editingId); setEditingId(null);
     setTimeout(()=>setSaved(null),2500);
   };
-  const quickStatus = (id, status) => {
-    update(ref(db, `cities/${city}/wards/${id}`), {
-      status,
-      delay: status==="green"?"On Time":status==="yellow"?"~45 mins":"Supply Off",
+
+  const quickStatus = async (id, status) => {
+    const wardPath = `cities/${city}/wards/${id-1}`;
+    const delay = status==="green"?"On Time":status==="yellow"?"~45 mins":status==="low_pressure"?"Low Flow":"Supply Off";
+    await update(ref(db, wardPath), { status, delay });
+    // Push alert to Firebase
+    await push(ref(db,`cities/${city}/alerts`),{
+      ward: wards.find(w=>w.id===id)?.name || "Ward",
+      type: status==="green"?"restored":status==="red"?"outage":"delay",
+      severity: status==="red"?"high":status==="low_pressure"?"medium":"low",
+      msg: `Admin updated status to ${status==="green"?"Water Flowing":status==="yellow"?"Coming Soon":status==="low_pressure"?"Low Pressure":"No Supply"}`,
+      time: new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),
     });
     setSaved(id); setTimeout(()=>setSaved(null),2000);
   };
@@ -138,7 +165,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
 
       <div style={{maxWidth:1280, margin:"0 auto", padding:"24px 16px 100px"}}>
 
-        {/* City selector */}
+        {/* City selector — DROPDOWN */}
         <div style={{
           display:"flex", alignItems:"center", gap:12, marginBottom:24,
           padding:"16px 20px", borderRadius:20,
@@ -151,19 +178,24 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
                          fontSize:14, color:"#0f172a", flexShrink:0}}>
             📍 Select City:
           </span>
-          <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+          <select
+            value={city}
+            onChange={e=>{ setCity(e.target.value); setEditingId(null); }}
+            style={{
+              padding:"10px 16px", borderRadius:12,
+              border:"1.5px solid rgba(6,182,212,0.3)",
+              background:"rgba(240,249,255,0.9)",
+              color:"#0369a1", fontWeight:800, fontSize:13,
+              fontFamily:"'Nunito',sans-serif",
+              cursor:"pointer", outline:"none",
+              boxShadow:"0 2px 8px rgba(6,182,212,0.1)",
+              minWidth:220,
+            }}
+          >
             {cityOptions.map(c=>(
-              <button key={c.key} onClick={()=>{ setCity(c.key); setEditingId(null); }} style={{
-                padding:"9px 20px", borderRadius:999, border:"none",
-                cursor:"pointer", fontFamily:"'Nunito',sans-serif", fontWeight:800, fontSize:13,
-                background: city===c.key?"linear-gradient(135deg,#0ea5e9,#06b6d4)":"rgba(240,249,255,0.8)",
-                color:       city===c.key?"white":"#0369a1",
-                boxShadow:   city===c.key?"0 4px 12px rgba(6,182,212,0.35)":"none",
-                outline:     city===c.key?"none":"1.5px solid rgba(6,182,212,0.2)",
-                transition:"all 0.2s ease",
-              }}>{c.label}</button>
+              <option key={c.key} value={c.key}>{c.label}</option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Summary cards */}
@@ -351,7 +383,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
           <div style={{display:"flex", flexDirection:"column", gap:10}}>
             <h3 style={{fontFamily:"'Raleway',sans-serif", fontWeight:900,
                          fontSize:20, color:"#0f172a", margin:"0 0 12px"}}>
-              Recent Alerts — {cityNames[city]||city}
+              Recent Alerts — {cityData[city]?.name}
             </h3>
             {alerts.map(alert=>{
               const ac = alertColors[alert.type];
@@ -389,7 +421,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity = "sangl
               📢 Broadcast to Citizens
             </h3>
             <p style={{fontSize:13, color:"#64748b", margin:"0 0 22px", fontWeight:600}}>
-              Send alert to {cityNames[city]||city} residents
+              Send alert to {cityData[city]?.name} residents
             </p>
             <div style={{display:"flex", flexDirection:"column", gap:14}}>
               <div>
