@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useCityData } from "../useCityData";
-import WardCard       from "../components/WardCard";
+import WardCard        from "../components/WardCard";
 import WardDetailSheet from "../components/WardDetailSheet";
-import ReportModal    from "../components/ReportModal";
+import ReportModal     from "../components/ReportModal";
 
 export default function WardsPage({ selectedCity }) {
   const { data: city, loading } = useCityData(selectedCity);
@@ -24,12 +24,20 @@ export default function WardsPage({ selectedCity }) {
     </div>
   );
 
+  if (loading) return (
+    <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  minHeight:"60vh", fontFamily:"'Nunito',sans-serif"}}>
+      <div style={{fontSize:48, marginBottom:12}}>💧</div>
+      <p style={{fontWeight:800, color:"#0369a1", fontSize:16}}>Loading live data...</p>
+    </div>
+  );
 
   const filters = [
-    { key:"all",    label:"All Wards" },
-    { key:"green",  label:"💧 Flowing" },
-    { key:"yellow", label:"⏳ Coming Soon" },
-    { key:"red",    label:"🚱 No Supply" },
+    { key:"all",          label:"All Wards"      },
+    { key:"green",        label:"💧 Flowing"      },
+    { key:"yellow",       label:"⏳ Coming Soon"  },
+    { key:"low_pressure", label:"🔻 Low Pressure" },
+    { key:"red",          label:"🚱 No Supply"    },
   ];
 
   const filtered = filter === "all" ? wards : wards.filter(w => w.status === filter);
@@ -37,7 +45,7 @@ export default function WardsPage({ selectedCity }) {
   return (
     <div style={{maxWidth:1280, margin:"0 auto", padding:"20px 16px 100px"}}>
 
-      {/* City label */}
+      {/* Header */}
       <div style={{marginBottom:16}}>
         <h2 style={{
           fontFamily:"'Raleway',sans-serif", fontWeight:900,
@@ -45,7 +53,7 @@ export default function WardsPage({ selectedCity }) {
           letterSpacing:"-0.5px", lineHeight:1.1, marginBottom:4,
         }}>Ward Status</h2>
         <p style={{fontSize:13, fontWeight:700, color:"#94a3b8", margin:0}}>
-          {wards.length} wards · {city?.name} · Live
+          {wards.length} wards · {city?.name} · 🔴 Live
         </p>
       </div>
 
@@ -84,11 +92,24 @@ export default function WardsPage({ selectedCity }) {
         ))}
       </div>
 
+      {filtered.length === 0 && !loading && (
+        <div style={{textAlign:"center", padding:"60px 0"}}>
+          <span style={{fontSize:48, display:"block", marginBottom:12}}>🔍</span>
+          <p style={{color:"#94a3b8", fontWeight:700, fontFamily:"'Nunito',sans-serif"}}>
+            No wards match this filter
+          </p>
+        </div>
+      )}
+
       {selectedWard && (
-        <WardDetailSheet ward={selectedWard} onClose={() => setSelectedWard(null)} onReport={() => { setReportWard(selectedWard); setSelectedWard(null); }}/>
+        <WardDetailSheet
+          ward={selectedWard}
+          onClose={() => setSelectedWard(null)}
+          onReport={() => { setReportWard(selectedWard); setSelectedWard(null); }}
+        />
       )}
       {reportWard && (
-        <ReportModal ward={reportWard} cityKey={selectedCity} allWards={wards} onClose={() => setReportWard(null)}/>
+        <ReportModal ward={reportWard} cityKey={selectedCity} onClose={() => setReportWard(null)} />
       )}
     </div>
   );

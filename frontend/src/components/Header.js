@@ -135,7 +135,7 @@ export default function Header({ onAdminClick, selectedCity, role, onLogout }) {
 
             {/* Logout */}
             <button className="header-logout" onClick={onLogout}>
-              🚪<span> Logout</span>
+              <span> Logout</span>
             </button>
           </div>
         </div>

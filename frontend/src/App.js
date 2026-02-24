@@ -77,7 +77,13 @@ export default function App() {
     return unsub;
   }, []);
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = async () => {
+    try { await signOut(auth); } catch(e) {}
+    setRole(null);
+    setAdminMode(false);
+    setSelectedCity(null);
+    setActiveTab("home");
+  };
 
   if (!authReady) {
     return (

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { db } from "../firebase";
 import { ref, runTransaction, update, push } from "firebase/database";
 
-const REPORT_THRESHOLD = 1; // Change to 5 for production
+const REPORT_THRESHOLD = 5; // Change to 5 for production
 
 export default function ReportModal({ ward, cityKey, onClose }) {
   const [step,     setStep]     = useState("pick"); // "pick" | "done"

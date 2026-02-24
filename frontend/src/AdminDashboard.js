@@ -352,7 +352,7 @@ export default function AdminDashboard({ onBack, selectedCity: initCity }) {
                         </div>
                       </div>
                       <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", flexShrink:0}}>
-                        {["green","yellow","red"].map(s=>(
+                        {["green","yellow","low_pressure","red"].map(s=>(
                           <button key={s} onClick={()=>quickStatus(ward.id,s)}
                             disabled={ward.status===s} title={statusConfig[s].label}
                             style={{
