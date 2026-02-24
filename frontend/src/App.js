@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import "./App.css";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -55,17 +56,17 @@ export default function App() {
   const [selectedCity, setSelectedCity] = useState(null);
 
   const handlePredict = async (zoneName) => {
-  try {
-    const response = await axios.post("http://127.0.0.1:8000/predict", {
-      zone: zoneName,
-      hour: new Date().getHours(),
-      temperature: 30 // Example temp
-    });
-    alert("Prediction: " + response.data.prediction);
-  } catch (error) {
-    console.error("Error reaching backend:", error);
-  }
-};
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/predict", {
+        zone: zoneName,
+        hour: new Date().getHours(),
+        temperature: 30,
+      });
+      console.log("Prediction:", response.data.prediction);
+    } catch (error) {
+      console.error("Error reaching ML backend:", error);
+    }
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
@@ -101,19 +102,20 @@ export default function App() {
 
   const renderPage = () => {
     switch (activeTab) {
-    case "home":
-default:
-  return <HomePage 
-    selectedCity={selectedCity} 
-    onCityChange={(city) => {
-      setSelectedCity(city);
-      handlePredict(city); // This sends the city name to your Backend terminal!
-    }} 
-  />;
       case "wards":   return <WardsPage selectedCity={selectedCity} />;
       case "predict": return <PredictPage selectedCity={selectedCity} />;
       case "alerts":  return <AlertsPage selectedCity={selectedCity} />;
-      default:        return <HomePage selectedCity={selectedCity} onCityChange={setSelectedCity} />;
+      case "home":
+      default:
+        return (
+          <HomePage
+            selectedCity={selectedCity}
+            onCityChange={(city) => {
+              setSelectedCity(city);
+              handlePredict(city);
+            }}
+          />
+        );
     }
   };
 
