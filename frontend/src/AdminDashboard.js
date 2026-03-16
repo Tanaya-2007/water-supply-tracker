@@ -3,9 +3,10 @@ import { db } from "./firebase";
 import { ref, onValue, update, push } from "firebase/database";
 
 const cityData = {
-  sangli: { name:"Sangli-Miraj-Kupwad", corp:"SMC" },
-  pune:   { name:"Pune Municipal Corporation", corp:"PMC" },
-  nashik: { name:"Nashik Municipal Corporation", corp:"NMC" },
+  solapur: { name:"Solapur Municipal Corporation", corp:"SMC" },
+  sangli:  { name:"Sangli-Miraj-Kupwad", corp:"SMC" },
+  pune:    { name:"Pune Municipal Corporation", corp:"PMC" },
+  nashik:  { name:"Nashik Municipal Corporation", corp:"NMC" },
 };
 const statusConfig = {
   green:  { label:"Flowing",     color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", dot:"#22c55e" },
@@ -19,13 +20,14 @@ const alertColors = {
   info:     { color:"#0ea5e9", bg:"#f0f9ff", border:"#bae6fd", icon:"ℹ️" },
 };
 const cityOptions = [
-  { key:"sangli", label:"Sangli-Miraj-Kupwad" },
-  { key:"pune",   label:"Pune" },
-  { key:"nashik", label:"Nashik" },
+  { key:"solapur", label:"Solapur" },
+  { key:"sangli",  label:"Sangli-Miraj-Kupwad" },
+  { key:"pune",    label:"Pune" },
+  { key:"nashik",  label:"Nashik" },
 ];
 
 export default function AdminDashboard({ onBack, selectedCity: initCity }) {
-  const [city,          setCity]          = useState(initCity || "sangli");
+  const [city,          setCity]          = useState(initCity || "solapur");
   const [activeTab,     setActiveTab]     = useState("wards");
   const [editingId,     setEditingId]     = useState(null);
   const [editData,      setEditData]      = useState({});
@@ -40,7 +42,6 @@ export default function AdminDashboard({ onBack, selectedCity: initCity }) {
       if(snap.exists()){
         const data = snap.val();
         const arr  = Array.isArray(data) ? data : Object.values(data);
-        // Filter out any entries without a name (corrupted Firebase entries)
         setWards(arr.filter(w => w && w.name));
       } else setWards([]);
     });

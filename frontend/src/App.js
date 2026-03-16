@@ -54,7 +54,7 @@ export default function App() {
   const [activeTab,    setActiveTab]    = useState("home");
   const [adminMode,    setAdminMode]    = useState(false);
   const [selectedCity, setSelectedCity] = useState(null);
-  const [role,         setRole]         = useState(null); // "user" | "admin"
+  const [role,         setRole]         = useState(null);
 
   const handlePredict = async (zoneName) => {
     try {
@@ -107,7 +107,7 @@ export default function App() {
   }
 
   if (adminMode) {
-    return <AdminDashboard onBack={() => setAdminMode(false)} selectedCity={selectedCity || "sangli"} />;
+    return <AdminDashboard onBack={() => setAdminMode(false)} selectedCity={selectedCity || "solapur"} />;
   }
 
   const renderPage = () => {
